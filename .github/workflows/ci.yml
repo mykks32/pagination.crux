@@ -44,6 +44,14 @@ jobs:
       - name: Format check
         run: pnpm run format:check
 
+      # Must run before any test/type-check step: apps/notes-api imports
+      # @mykks32/pagination via its package.json "main"/"types" fields,
+      # which point at dist/ — that dist/ doesn't exist until this build
+      # runs (pnpm -r builds packages/pagination before apps/notes-api,
+      # respecting workspace dependency order).
+      - name: Build
+        run: pnpm run build
+
       - name: Test
         run: pnpm run test:cov
 
@@ -52,6 +60,3 @@ jobs:
       # script above, so it's invoked directly.
       - name: Test (notes-api e2e)
         run: pnpm --filter notes-api run test:e2e
-
-      - name: Build
-        run: pnpm run build
