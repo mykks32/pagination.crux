@@ -1,0 +1,26 @@
+meta {
+  name: 6. List Notes - Last Page (via links.last)
+  type: http
+  seq: 6
+}
+
+get {
+  url: {{host}}{{v3LastLink}}
+  body: none
+  auth: none
+}
+
+docs {
+  Run "2. List Notes - Basic (Page 1)" first — it captures `links.last`
+  (already resolved to the actual final page number, e.g. "?page=8&limit=10")
+  into {{v3LastLink}}. Unlike `previous`/`next`, `first`/`last` are never
+  null — jumping straight to the last page is exactly what offset
+  pagination can do that cursor pagination (v1/v2) structurally can't.
+}
+
+script:post-response {
+  if (res.body && res.body.links) {
+    bru.setVar("v3PreviousLink", res.body.links.previous);
+    bru.setVar("v3LastLink", res.body.links.last);
+  }
+}

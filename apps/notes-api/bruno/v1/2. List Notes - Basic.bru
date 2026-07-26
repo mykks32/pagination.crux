@@ -1,0 +1,28 @@
+meta {
+  name: 2. List Notes - Basic
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{baseUrl}}/notes?first=10
+  body: none
+  auth: none
+}
+
+params:query {
+  first: 10
+}
+
+script:post-response {
+  if (res.body && res.body.pageInfo) {
+    bru.setVar("endCursor", res.body.pageInfo.endCursor);
+    bru.setVar("startCursor", res.body.pageInfo.startCursor);
+  }
+}
+
+docs {
+  v1's native response shape — Relay Cursor Connections:
+  `{ edges: [{ node, cursor }], pageInfo }`. Compare against v2/v3's flat
+  `{ data, meta, links }` for the same underlying data.
+}

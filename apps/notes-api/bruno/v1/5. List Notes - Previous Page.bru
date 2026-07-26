@@ -1,23 +1,23 @@
 meta {
-  name: List Notes - Next Page
+  name: 5. List Notes - Previous Page
   type: http
-  seq: 3
+  seq: 5
 }
 
 get {
-  url: {{baseUrl}}/notes?first=10&after={{endCursor}}
+  url: {{baseUrl}}/notes?last=10&before={{startCursor}}
   body: none
   auth: none
 }
 
 params:query {
-  first: 10
-  after: {{endCursor}}
+  last: 10
+  before: {{startCursor}}
 }
 
 docs {
-  Run "List Notes - First Page" first — it stores `pageInfo.endCursor` into
-  the {{endCursor}} variable this request pages forward from.
+  Backward pagination — pages toward the start of the list using
+  `pageInfo.startCursor` captured from a previous list request.
 }
 
 script:post-response {

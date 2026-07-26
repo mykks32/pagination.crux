@@ -1,0 +1,48 @@
+meta {
+  name: 3. List Notes - All Fields
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{baseUrlV2}}/notes?first=5&search=note&sort=title&order=asc&include=title,tags,archived&filters=%7B%22tags%22%3A%22personal%22%7D&includeArchived=true&includeTotalCount=true
+  body: none
+  auth: none
+}
+
+params:query {
+  first: 5
+  search: note
+  sort: title
+  order: asc
+  include: title,tags,archived
+  filters: {"tags":"personal"}
+  includeArchived: true
+  includeTotalCount: true
+}
+
+docs {
+  Every field ListNotesQueryDto supports, in one request — same query
+  surface as the v1 folder's equivalent request, but here `include` has a
+  real, visible effect: each item in `data` comes back as exactly
+  `{ id, title, tags, archived }`, nothing else. That's the one behavioral
+  difference between v1 and v2 for identical query params — v1 always
+  returns the full node regardless of `include`/`exclude`.
+
+  - first             — page size, forward direction
+  - search            — free-text match over title/content (MongoDB $text)
+  - sort / order      — createdAt|updatedAt|title, asc|desc
+  - include           — sparse fieldset, applied here (see above)
+  - filters           — whitelisted ad-hoc equality filter, JSON-encoded
+  - includeArchived    — drops the default archived:false visibility rule;
+                         filters={"tags":"personal"} re-applies its own
+                         condition on top
+  - includeTotalCount  — populates `meta.count` (an extra countDocuments)
+}
+
+script:post-response {
+  if (res.body && res.body.links) {
+    bru.setVar("v2NextLink", res.body.links.next);
+    bru.setVar("v2PreviousLink", res.body.links.previous);
+  }
+}

@@ -1,0 +1,15 @@
+meta {
+  name: 10. Delete Note
+  type: http
+  seq: 10
+}
+
+delete {
+  url: {{baseUrlV3}}/notes/{{noteId}}
+  body: none
+  auth: none
+}
+
+vars:pre-request {
+  noteId: 6a66349095dfff6f321e9827
+}

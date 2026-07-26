@@ -1,0 +1,26 @@
+meta {
+  name: 1. Create Note
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{baseUrlV2}}/notes
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "title": "My first note",
+    "content": "Some content for the note.",
+    "tags": ["personal"]
+  }
+}
+
+script:post-response {
+  // Shared across v1/v2/v3 folders — same underlying data either way.
+  if (res.body && res.body.id) {
+    bru.setVar("noteId", res.body.id);
+  }
+}

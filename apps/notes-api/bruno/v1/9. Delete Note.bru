@@ -1,11 +1,15 @@
 meta {
-  name: Delete Note
+  name: 9. Delete Note
   type: http
-  seq: 11
+  seq: 9
 }
 
 delete {
   url: {{baseUrl}}/notes/{{noteId}}
   body: none
   auth: none
+}
+
+vars:pre-request {
+  noteId: 6a66349095dfff6f321e9827
 }

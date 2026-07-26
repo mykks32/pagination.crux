@@ -1,23 +1,18 @@
 meta {
-  name: List Notes - Previous Page
+  name: 4. List Notes - Next Page
   type: http
   seq: 4
 }
 
 get {
-  url: {{baseUrl}}/notes?last=10&before={{startCursor}}
+  url: {{baseUrl}}/notes?first=10&after={{endCursor}}
   body: none
   auth: none
 }
 
 params:query {
-  last: 10
-  before: {{startCursor}}
-}
-
-docs {
-  Backward pagination — pages toward the start of the list using
-  `pageInfo.startCursor` captured from a previous list request.
+  first: 10
+  after: {{endCursor}}
 }
 
 script:post-response {
@@ -25,4 +20,9 @@ script:post-response {
     bru.setVar("endCursor", res.body.pageInfo.endCursor);
     bru.setVar("startCursor", res.body.pageInfo.startCursor);
   }
+}
+
+docs {
+  Run "2. List Notes - Basic" first — it stores `pageInfo.endCursor` into
+  the {{endCursor}} variable this request pages forward from.
 }

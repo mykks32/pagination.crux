@@ -1,11 +1,11 @@
 meta {
-  name: Create Note
+  name: 1. Create Note
   type: http
   seq: 1
 }
 
 post {
-  url: {{baseUrl}}/notes
+  url: {{baseUrlV3}}/notes
   body: json
   auth: none
 }
@@ -19,8 +19,7 @@ body:json {
 }
 
 script:post-response {
-  // Stash the created id so later requests (Get/Update/Archive/Delete) can
-  // reference it via {{noteId}} without manual copy-pasting.
+  // Shared across v1/v2/v3 folders — same underlying data either way.
   if (res.body && res.body.id) {
     bru.setVar("noteId", res.body.id);
   }

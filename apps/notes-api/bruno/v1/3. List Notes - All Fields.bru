@@ -1,0 +1,47 @@
+meta {
+  name: 3. List Notes - All Fields
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{baseUrl}}/notes?first=5&search=note&sort=title&order=asc&include=title,tags,archived&filters=%7B%22tags%22%3A%22personal%22%7D&includeArchived=true&includeTotalCount=true
+  body: none
+  auth: none
+}
+
+params:query {
+  first: 5
+  search: note
+  sort: title
+  order: asc
+  include: title,tags,archived
+  filters: {"tags":"personal"}
+  includeArchived: true
+  includeTotalCount: true
+}
+
+docs {
+  Every field ListNotesQueryDto (extends @mykks32/pagination-cursor's
+  CursorPaginationDto) supports, in one request:
+  
+  - first             — page size, forward direction (pair with `after` on
+                         later pages; omitted here since this is page one)
+  - search            — free-text match over title/content (MongoDB $text)
+  - sort / order      — createdAt|updatedAt|title, asc|desc
+  - include           — sparse fieldset — NOTE: v1 ignores this. Only v2/v3
+                         apply field selection to their output; v1 always
+                         returns the full node. Included here anyway so you
+                         can see it validates without error even where it
+                         has no visible effect.
+  - filters           — whitelisted ad-hoc equality filter, JSON-encoded
+                         (NOTE_FILTERABLE_FIELDS: title, tags, archived)
+  - includeArchived    — drops the default archived:false visibility rule;
+                         combined with filters={"tags":"personal"} here to
+                         show filters can re-apply its own condition on top
+  - includeTotalCount  — populates `totalCount` (an extra countDocuments)
+  
+  `%7B%22tags%22%3A%22personal%22%7D` is `{"tags":"personal"}`,
+  percent-encoded — raw `{`/`"`/`}` are reserved URL characters; some
+  HTTP clients mishandle them unencoded.
+}

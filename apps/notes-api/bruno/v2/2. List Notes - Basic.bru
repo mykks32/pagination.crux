@@ -1,0 +1,30 @@
+meta {
+  name: 2. List Notes - Basic
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{baseUrlV2}}/notes?first=10&includeTotalCount=true
+  body: none
+  auth: none
+}
+
+params:query {
+  first: 10
+  includeTotalCount: true
+}
+
+docs {
+  Same cursor pagination as v1, reshaped into a flat REST envelope by
+  @mykks32/pagination-cursor: `{ data, meta, links }` — no `edges`/`node`
+  wrapping. Compare against "1. List Notes - Basic" in the v1 folder for
+  the same underlying data in the other shape.
+}
+
+script:post-response {
+  if (res.body && res.body.links) {
+    bru.setVar("v2NextLink", res.body.links.next);
+    bru.setVar("v2PreviousLink", res.body.links.previous);
+  }
+}

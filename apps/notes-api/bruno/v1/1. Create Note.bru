@@ -1,0 +1,29 @@
+meta {
+  name: 1. Create Note
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{baseUrl}}/notes
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "title": "My first note",
+    "content": "Some content for the note.",
+    "tags": ["personal"]
+  }
+}
+
+script:post-response {
+  // Stash the created id so later requests (Get/Update/Archive/Delete) can
+  // reference it via {{noteId}} without manual copy-pasting. Notes are
+  // shared across all three API versions (same underlying data, different
+  // response shapes), so this var is reused by v2/v3 folders too.
+  if (res.body && res.body.id) {
+    bru.setVar("noteId", res.body.id);
+  }
+}

@@ -1,0 +1,30 @@
+meta {
+  name: 2. List Notes - Basic (Page 1)
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{baseUrlV3}}/notes?page=1&limit=10
+  body: none
+  auth: none
+}
+
+params:query {
+  page: 1
+  limit: 10
+}
+
+docs {
+  Classic page/limit pagination via @mykks32/pagination-offset — response
+  always includes `meta.totalItems`/`totalPages` (no opt-in flag needed,
+  unlike v1/v2's `includeTotalCount`) and `links.first`/`last` for
+  jump-to-any-page navigation.
+}
+
+script:post-response {
+  if (res.body && res.body.links) {
+    bru.setVar("v3PreviousLink", res.body.links.previous);
+    bru.setVar("v3LastLink", res.body.links.last);
+  }
+}

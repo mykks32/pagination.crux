@@ -1,0 +1,49 @@
+meta {
+  name: 3. List Notes - All Fields
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{baseUrlV3}}/notes?page=1&limit=5&search=note&sort=title&order=asc&include=title,tags,archived&filters=%7B%22tags%22%3A%22personal%22%7D&includeArchived=true
+  body: none
+  auth: none
+}
+
+params:query {
+  page: 1
+  limit: 5
+  search: note
+  sort: title
+  order: asc
+  include: title,tags,archived
+  filters: {"tags":"personal"}
+  includeArchived: true
+}
+
+docs {
+  Every field ListNotesOffsetQueryDto (extends
+  @mykks32/pagination-offset's OffsetPaginationDto) supports, in one
+  request:
+
+  - page / limit      — 1-indexed page number + page size
+  - search            — free-text match over title/content (MongoDB $text)
+  - sort / order      — createdAt|updatedAt|title, asc|desc
+  - include           — sparse fieldset, applied — each item in `data`
+                         comes back as exactly `{ id, title, tags, archived }`
+  - filters           — whitelisted ad-hoc equality filter, JSON-encoded
+  - includeArchived    — drops the default archived:false visibility rule;
+                         filters={"tags":"personal"} re-applies its own
+                         condition on top
+
+  No `includeTotalCount` toggle here (unlike v1/v2) — offset pagination
+  always computes `meta.totalItems`/`totalPages`, since `links.last`
+  depends on knowing the total up front.
+}
+
+script:post-response {
+  if (res.body && res.body.links) {
+    bru.setVar("v3PreviousLink", res.body.links.previous);
+    bru.setVar("v3LastLink", res.body.links.last);
+  }
+}

@@ -1,0 +1,25 @@
+meta {
+  name: 4. List Notes - Next Page (via links.next)
+  type: http
+  seq: 4
+}
+
+get {
+  url: {{host}}{{v2NextLink}}
+  body: none
+  auth: none
+}
+
+docs {
+  Run "2. List Notes - Basic" first — it captures `links.next` (already a
+  complete, ready-to-use next-page URL, e.g. "/v2/notes?first=10&after=...")
+  into {{v2NextLink}}. Unlike v1, a v2 client never has to construct the
+  next page's query string by hand — it just follows the link.
+}
+
+script:post-response {
+  if (res.body && res.body.links) {
+    bru.setVar("v2NextLink", res.body.links.next);
+    bru.setVar("v2PreviousLink", res.body.links.previous);
+  }
+}

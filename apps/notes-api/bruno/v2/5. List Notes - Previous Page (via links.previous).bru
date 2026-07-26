@@ -1,0 +1,26 @@
+meta {
+  name: 5. List Notes - Previous Page (via links.previous)
+  type: http
+  seq: 5
+}
+
+get {
+  url: {{host}}{{v2PreviousLink}}
+  body: none
+  auth: none
+}
+
+docs {
+  Run "4. List Notes - Next Page" first — it captures `links.previous`
+  (already a complete, ready-to-use previous-page URL) into
+  {{v2PreviousLink}}. Same idea as v1's "5. List Notes - Previous Page",
+  but here the client never constructs `?last=...&before=...` by hand —
+  it just follows the link.
+}
+
+script:post-response {
+  if (res.body && res.body.links) {
+    bru.setVar("v2NextLink", res.body.links.next);
+    bru.setVar("v2PreviousLink", res.body.links.previous);
+  }
+}

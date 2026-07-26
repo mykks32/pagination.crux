@@ -1,0 +1,21 @@
+meta {
+  name: 9. Archive Note
+  type: http
+  seq: 9
+}
+
+patch {
+  url: {{baseUrlV3}}/notes/{{noteId}}
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "archived": true
+  }
+}
+
+vars:pre-request {
+  noteId: 6a66349095dfff6f321e9827
+}

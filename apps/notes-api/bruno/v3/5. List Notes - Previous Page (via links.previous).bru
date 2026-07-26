@@ -1,0 +1,24 @@
+meta {
+  name: 5. List Notes - Previous Page (via links.previous)
+  type: http
+  seq: 5
+}
+
+get {
+  url: {{host}}{{v3PreviousLink}}
+  body: none
+  auth: none
+}
+
+docs {
+  Run "4. List Notes - Page 2" first — it captures `links.previous` into
+  {{v3PreviousLink}}. `null` (and this request will fail) if you're
+  already on page 1, since there's no previous page to link to.
+}
+
+script:post-response {
+  if (res.body && res.body.links) {
+    bru.setVar("v3PreviousLink", res.body.links.previous);
+    bru.setVar("v3LastLink", res.body.links.last);
+  }
+}

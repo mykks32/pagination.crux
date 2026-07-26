@@ -1,0 +1,20 @@
+meta {
+  name: 6. Get Note By Id
+  type: http
+  seq: 6
+}
+
+get {
+  url: {{baseUrlV2}}/notes/{{noteId}}
+  body: none
+  auth: none
+}
+
+vars:pre-request {
+  noteId: 6a66349095dfff6f321e9827
+}
+
+docs {
+  Uses {{noteId}}, set by "1. Create Note"'s post-response script (in
+  either the v1, v2, or v3 folder — same underlying resource either way).
+}
