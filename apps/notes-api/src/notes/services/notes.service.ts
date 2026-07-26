@@ -3,15 +3,18 @@
  * cursor-paginated ({@link NotesService.findAll}, backing v1/v2) and
  * offset-paginated ({@link NotesService.findAllOffset}, backing v3). Both
  * share the same sort-whitelist/filter-sanitization/search logic
- * ({@link NotesService.resolveSort}/{@link NotesService.buildFilter}) —
- * only the pagination mechanics differ, which is exactly what's delegated
- * out to `MongoCursorPaginationService`/`MongoOffsetPaginationService`.
+ * ({@link NotesService.resolveSort}/{@link NotesService.buildFilter}), which
+ * delegates to `@mykks32/pagination-cursor`'s `resolveSort`/`sanitizeFilters`
+ * utilities — only the pagination mechanics differ between v1/v2 and v3,
+ * which is what's delegated out to
+ * `MongoCursorPaginationService`/`MongoOffsetPaginationService`.
  */
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 // Keep as a real import: implicit constructor-injected DI token, needed at runtime (see CONTRIBUTING.md).
 // eslint-disable-next-line @typescript-eslint/consistent-type-imports
-import { MongoCursorPaginationService, type PaginatedResult, type SortDirection } from '@mykks32/pagination-relay';
+import { MongoCursorPaginationService, type PaginatedResult } from '@mykks32/pagination-relay';
+import { resolveSort, sanitizeFilters } from '@mykks32/pagination-cursor';
 // eslint-disable-next-line @typescript-eslint/consistent-type-imports
 import { MongoOffsetPaginationService, type OffsetPage } from '@mykks32/pagination-offset';
 import type { FilterQuery, Model } from 'mongoose';
@@ -90,14 +93,9 @@ export class NotesService {
     });
   }
 
-  /** Validates `sort`/`order` against the notes whitelist, defaulting to `createdAt DESC` if omitted. Shared by both listing methods. */
-  private resolveSort(query: CommonListParams): { field: NoteSortableField; direction: SortDirection } {
-    const field = query.sort ?? DEFAULT_SORT_FIELD;
-    if (!NOTE_SORTABLE_FIELDS.includes(field as NoteSortableField)) {
-      throw new BadRequestException(`"sort" must be one of: ${NOTE_SORTABLE_FIELDS.join(', ')}.`);
-    }
-    const direction: SortDirection = query.order === 'asc' ? 'ASC' : 'DESC';
-    return { field: field as NoteSortableField, direction };
+  /** Validates `sort`/`order` against the notes whitelist, defaulting to `createdAt DESC` if omitted. Shared by both listing methods; delegates to `@mykks32/pagination-cursor`'s `resolveSort()`. */
+  private resolveSort(query: CommonListParams) {
+    return resolveSort(query, NOTE_SORTABLE_FIELDS, DEFAULT_SORT_FIELD);
   }
 
   /**
@@ -113,37 +111,8 @@ export class NotesService {
       filter.$text = { $search: query.search };
     }
 
-    Object.assign(filter, this.sanitizeFilters(query.filters));
+    Object.assign(filter, sanitizeFilters(query.filters, NOTE_FILTERABLE_FIELDS));
     return filter;
-  }
-
-  /**
-   * Whitelists `filters` down to known Note fields with primitive (or
-   * primitive-array) values. Rejecting anything else — unknown keys,
-   * nested objects — is what stops a client from smuggling a Mongo
-   * operator (e.g. `{"$where": "..."}`) through an otherwise-generic
-   * "ad-hoc filters" query param.
-   */
-  private sanitizeFilters(filters: Record<string, unknown> | undefined): FilterQuery<Note> {
-    if (!filters) return {};
-
-    const sanitized: FilterQuery<Note> = {};
-    for (const [field, value] of Object.entries(filters)) {
-      if (!(NOTE_FILTERABLE_FIELDS as readonly string[]).includes(field)) {
-        throw new BadRequestException(`"${field}" is not a filterable field. Allowed: ${NOTE_FILTERABLE_FIELDS.join(', ')}.`);
-      }
-      if (!this.isPlainFilterValue(value)) {
-        throw new BadRequestException(`Filter value for "${field}" must be a string, number, boolean, or array of those — not an object.`);
-      }
-      (sanitized as Record<string, unknown>)[field] = value;
-    }
-    return sanitized;
-  }
-
-  /** A primitive, or an array of primitives — never a nested object, which is how Mongo query operators sneak in. */
-  private isPlainFilterValue(value: unknown): boolean {
-    const isPrimitive = (v: unknown): boolean => typeof v === 'string' || typeof v === 'number' || typeof v === 'boolean';
-    return isPrimitive(value) || (Array.isArray(value) && value.every(isPrimitive));
   }
 
   /** Fetches a single note by id, or throws `NotFoundException` if it doesn't exist. */
