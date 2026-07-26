@@ -1,20 +1,31 @@
 /**
- * Business logic for notes: plain CRUD plus listing, in two flavors —
- * cursor-paginated ({@link NotesService.findAll}, backing v1/v2) and
- * offset-paginated ({@link NotesService.findAllOffset}, backing v3). Both
- * share the same sort-whitelist/filter-sanitization/search logic
+ * Business logic for notes: plain CRUD plus listing, in three genuinely
+ * independent pagination flavors — {@link NotesService.findAll} (v1, Relay
+ * connections via `@mykks32/pagination-relay`'s Mongo engine),
+ * {@link NotesService.findAllCursor} (v2, flat REST cursor pagination via
+ * `@mykks32/pagination-cursor`'s *own* Mongo engine — a separate keyset
+ * paginator, not a reshape of v1's result), and
+ * {@link NotesService.findAllOffset} (v3, page/limit via
+ * `@mykks32/pagination-offset`). All three share the same
+ * sort-whitelist/filter-sanitization/search logic
  * ({@link NotesService.resolveSort}/{@link NotesService.buildFilter}), which
  * delegates to `@mykks32/pagination-cursor`'s `resolveSort`/`sanitizeFilters`
- * utilities — only the pagination mechanics differ between v1/v2 and v3,
- * which is what's delegated out to
- * `MongoCursorPaginationService`/`MongoOffsetPaginationService`.
+ * utilities — only the pagination mechanics differ, which is what's
+ * delegated out to each package's own Mongo paginator/service.
  */
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-// Keep as a real import: implicit constructor-injected DI token, needed at runtime (see CONTRIBUTING.md).
+// Keep as real imports: implicit constructor-injected DI tokens, needed at runtime (see CONTRIBUTING.md).
+// Both packages export a class named MongoCursorPaginationService — aliased so v1 (relay) and v2 (cursor) inject distinct, unrelated engines.
 // eslint-disable-next-line @typescript-eslint/consistent-type-imports
-import { MongoCursorPaginationService, type PaginatedResult } from '@mykks32/pagination-relay';
-import { resolveSort, sanitizeFilters } from '@mykks32/pagination-cursor';
+import { MongoCursorPaginationService as RelayMongoCursorPaginationService, type PaginatedResult } from '@mykks32/pagination-relay';
+// eslint-disable-next-line @typescript-eslint/consistent-type-imports
+import {
+  MongoCursorPaginationService as CursorMongoCursorPaginationService,
+  resolveSort,
+  sanitizeFilters,
+  type CursorPage,
+} from '@mykks32/pagination-cursor';
 // eslint-disable-next-line @typescript-eslint/consistent-type-imports
 import { MongoOffsetPaginationService, type OffsetPage } from '@mykks32/pagination-offset';
 import type { FilterQuery, Model } from 'mongoose';
@@ -40,7 +51,8 @@ interface CommonListParams {
 export class NotesService {
   constructor(
     @InjectModel(Note.name) private readonly noteModel: Model<Note>,
-    private readonly paginationService: MongoCursorPaginationService,
+    private readonly relayPaginationService: RelayMongoCursorPaginationService,
+    private readonly cursorPaginationService: CursorMongoCursorPaginationService,
     private readonly offsetPaginationService: MongoOffsetPaginationService,
   ) {}
 
@@ -50,12 +62,12 @@ export class NotesService {
   }
 
   /**
-   * Cursor-paginates the notes collection.
-   *
-   * Delegates the actual seek-filter/limit/cursor-encoding work to
-   * `MongoCursorPaginationService.paginate()` — this method's only job is
-   * translating note-specific query params (archived filter, sort field
-   * whitelist) into the library's generic options shape.
+   * Cursor-paginates the notes collection, Relay connection style — the v1
+   * listing style. Delegates the actual seek-filter/limit/cursor-encoding
+   * work to `@mykks32/pagination-relay`'s `MongoCursorPaginationService` —
+   * this method's only job is translating note-specific query params
+   * (archived filter, sort field whitelist) into the library's generic
+   * options shape.
    *
    * Return type is `PaginatedResult<Note>` rather than `<NoteDocument>`:
    * `paginate<T>()` infers `T` from `Model<Note>`, so its *static* return
@@ -66,10 +78,28 @@ export class NotesService {
   async findAll(query: ListNotesQueryDto): Promise<PaginatedResult<Note>> {
     const { first, after, last, before, includeArchived = false, includeTotalCount = false } = query;
 
-    return this.paginationService.paginate(this.noteModel, {
+    return this.relayPaginationService.paginate(this.noteModel, {
       args: { first, after, last, before },
       // _id is appended automatically by the library as a tiebreaker, so a
       // single-field sort here still yields a stable, gap-free keyset.
+      sort: [this.resolveSort(query)],
+      filter: this.buildFilter(query, includeArchived),
+      includeTotalCount,
+    });
+  }
+
+  /**
+   * Cursor-paginates the notes collection, flat REST envelope style — the
+   * v2 listing style. Runs on `@mykks32/pagination-cursor`'s *own* Mongo
+   * cursor engine, a separate keyset paginator from v1's — not a reshape
+   * of {@link findAll}'s result. Same query params and pagination
+   * semantics as v1, entirely independent implementation underneath.
+   */
+  async findAllCursor(query: ListNotesQueryDto): Promise<CursorPage<Note>> {
+    const { first, after, last, before, includeArchived = false, includeTotalCount = false } = query;
+
+    return this.cursorPaginationService.paginate(this.noteModel, {
+      args: { first, after, last, before },
       sort: [this.resolveSort(query)],
       filter: this.buildFilter(query, includeArchived),
       includeTotalCount,

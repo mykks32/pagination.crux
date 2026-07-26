@@ -1,14 +1,15 @@
 /**
- * Unit tests for NotesService. The Mongoose model and MongoCursorPaginationService
- * are both provided as jest mocks — this suite is about NotesService's own
- * logic (id validation, not-found handling, how it shapes pagination
- * options), not about Mongoose or the pagination library themselves (those
- * are covered by @mykks32/pagination-relay's own test suite).
+ * Unit tests for NotesService. The Mongoose model and all three pagination
+ * services are provided as jest mocks — this suite is about NotesService's
+ * own logic (id validation, not-found handling, how it shapes pagination
+ * options), not about Mongoose or the pagination libraries themselves
+ * (those are covered by each package's own test suite).
  */
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { getModelToken } from '@nestjs/mongoose';
 import { Test } from '@nestjs/testing';
-import { MongoCursorPaginationService } from '@mykks32/pagination-relay';
+import { MongoCursorPaginationService as RelayMongoCursorPaginationService } from '@mykks32/pagination-relay';
+import { MongoCursorPaginationService as CursorMongoCursorPaginationService } from '@mykks32/pagination-cursor';
 import { MongoOffsetPaginationService } from '@mykks32/pagination-offset';
 import { Types } from 'mongoose';
 import { NotesService } from './notes.service';
@@ -24,7 +25,8 @@ describe('NotesService', () => {
     findByIdAndUpdate: jest.Mock;
     findByIdAndDelete: jest.Mock;
   };
-  let paginationService: { paginate: jest.Mock };
+  let relayPaginationService: { paginate: jest.Mock };
+  let cursorPaginationService: { paginate: jest.Mock };
   let offsetPaginationService: { paginate: jest.Mock };
 
   /** A syntactically valid ObjectId string — distinct per test run so tests can't accidentally rely on id equality. */
@@ -37,17 +39,20 @@ describe('NotesService', () => {
       findByIdAndUpdate: jest.fn(),
       findByIdAndDelete: jest.fn(),
     };
-    paginationService = { paginate: jest.fn() };
+    relayPaginationService = { paginate: jest.fn() };
+    cursorPaginationService = { paginate: jest.fn() };
     offsetPaginationService = { paginate: jest.fn() };
 
     const moduleRef = await Test.createTestingModule({
       providers: [
         NotesService,
         { provide: getModelToken(Note.name), useValue: noteModel },
-        // MongoCursorPaginationService/MongoOffsetPaginationService are
-        // injected by class reference, not a string token, so the mocks
-        // have to be provided under those same classes.
-        { provide: MongoCursorPaginationService, useValue: paginationService },
+        // Each pagination service is injected by class reference, not a
+        // string token, so the mocks have to be provided under those same
+        // classes. Relay's and cursor's classes share a name but are
+        // distinct references — no collision registering both.
+        { provide: RelayMongoCursorPaginationService, useValue: relayPaginationService },
+        { provide: CursorMongoCursorPaginationService, useValue: cursorPaginationService },
         { provide: MongoOffsetPaginationService, useValue: offsetPaginationService },
       ],
     }).compile();
@@ -68,36 +73,37 @@ describe('NotesService', () => {
     });
   });
 
-  describe('findAll', () => {
+  describe('findAll (v1, relay engine)', () => {
     it('defaults to sorting by createdAt DESC and excluding archived notes', async () => {
       const page = { edges: [], pageInfo: { hasNextPage: false, hasPreviousPage: false, startCursor: null, endCursor: null } };
-      paginationService.paginate.mockResolvedValue(page);
+      relayPaginationService.paginate.mockResolvedValue(page);
 
       const result = await service.findAll({});
 
-      expect(paginationService.paginate).toHaveBeenCalledWith(noteModel, {
+      expect(relayPaginationService.paginate).toHaveBeenCalledWith(noteModel, {
         args: { first: undefined, after: undefined, last: undefined, before: undefined },
         sort: [{ field: 'createdAt', direction: 'DESC' }],
         filter: { archived: false },
         includeTotalCount: false,
       });
+      expect(cursorPaginationService.paginate).not.toHaveBeenCalled();
       expect(result).toBe(page);
     });
 
     it('drops the archived filter when includeArchived is true', async () => {
-      paginationService.paginate.mockResolvedValue({ edges: [], pageInfo: {} });
+      relayPaginationService.paginate.mockResolvedValue({ edges: [], pageInfo: {} });
 
       await service.findAll({ includeArchived: true });
 
-      expect(paginationService.paginate).toHaveBeenCalledWith(noteModel, expect.objectContaining({ filter: {} }));
+      expect(relayPaginationService.paginate).toHaveBeenCalledWith(noteModel, expect.objectContaining({ filter: {} }));
     });
 
     it('forwards a custom sort/order and the first/after cursor args untouched', async () => {
-      paginationService.paginate.mockResolvedValue({ edges: [], pageInfo: {} });
+      relayPaginationService.paginate.mockResolvedValue({ edges: [], pageInfo: {} });
 
       await service.findAll({ first: 10, after: 'cursor-abc', sort: 'title', order: 'asc', includeTotalCount: true });
 
-      expect(paginationService.paginate).toHaveBeenCalledWith(
+      expect(relayPaginationService.paginate).toHaveBeenCalledWith(
         noteModel,
         expect.objectContaining({
           args: { first: 10, after: 'cursor-abc', last: undefined, before: undefined },
@@ -109,26 +115,26 @@ describe('NotesService', () => {
 
     it('rejects a sort field outside the whitelist', async () => {
       await expect(service.findAll({ sort: 'content' })).rejects.toBeInstanceOf(BadRequestException);
-      expect(paginationService.paginate).not.toHaveBeenCalled();
+      expect(relayPaginationService.paginate).not.toHaveBeenCalled();
     });
 
     it('turns "search" into a $text filter', async () => {
-      paginationService.paginate.mockResolvedValue({ edges: [], pageInfo: {} });
+      relayPaginationService.paginate.mockResolvedValue({ edges: [], pageInfo: {} });
 
       await service.findAll({ search: 'groceries' });
 
-      expect(paginationService.paginate).toHaveBeenCalledWith(
+      expect(relayPaginationService.paginate).toHaveBeenCalledWith(
         noteModel,
         expect.objectContaining({ filter: { archived: false, $text: { $search: 'groceries' } } }),
       );
     });
 
     it('merges whitelisted "filters" into the query filter', async () => {
-      paginationService.paginate.mockResolvedValue({ edges: [], pageInfo: {} });
+      relayPaginationService.paginate.mockResolvedValue({ edges: [], pageInfo: {} });
 
       await service.findAll({ filters: { tags: 'work' } });
 
-      expect(paginationService.paginate).toHaveBeenCalledWith(
+      expect(relayPaginationService.paginate).toHaveBeenCalledWith(
         noteModel,
         expect.objectContaining({ filter: { archived: false, tags: 'work' } }),
       );
@@ -136,12 +142,40 @@ describe('NotesService', () => {
 
     it('rejects a filter key outside the whitelist', async () => {
       await expect(service.findAll({ filters: { notAField: 'x' } })).rejects.toBeInstanceOf(BadRequestException);
-      expect(paginationService.paginate).not.toHaveBeenCalled();
+      expect(relayPaginationService.paginate).not.toHaveBeenCalled();
     });
 
     it('rejects a filter value that is a nested object (a potential Mongo operator injection)', async () => {
       await expect(service.findAll({ filters: { title: { $ne: null } } })).rejects.toBeInstanceOf(BadRequestException);
-      expect(paginationService.paginate).not.toHaveBeenCalled();
+      expect(relayPaginationService.paginate).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("findAllCursor (v2, pagination-cursor's own engine)", () => {
+    it('runs on the cursor engine, not the relay one, with the same option-shaping as findAll', async () => {
+      const page = { rows: [], pageInfo: { hasNextPage: false, hasPreviousPage: false, startCursor: null, endCursor: null } };
+      cursorPaginationService.paginate.mockResolvedValue(page);
+
+      const result = await service.findAllCursor({});
+
+      expect(cursorPaginationService.paginate).toHaveBeenCalledWith(noteModel, {
+        args: { first: undefined, after: undefined, last: undefined, before: undefined },
+        sort: [{ field: 'createdAt', direction: 'DESC' }],
+        filter: { archived: false },
+        includeTotalCount: false,
+      });
+      expect(relayPaginationService.paginate).not.toHaveBeenCalled();
+      expect(result).toBe(page);
+    });
+
+    it('rejects a sort field outside the whitelist, same as findAll', async () => {
+      await expect(service.findAllCursor({ sort: 'content' })).rejects.toBeInstanceOf(BadRequestException);
+      expect(cursorPaginationService.paginate).not.toHaveBeenCalled();
+    });
+
+    it('rejects a filter key outside the whitelist, same as findAll', async () => {
+      await expect(service.findAllCursor({ filters: { notAField: 'x' } })).rejects.toBeInstanceOf(BadRequestException);
+      expect(cursorPaginationService.paginate).not.toHaveBeenCalled();
     });
   });
 

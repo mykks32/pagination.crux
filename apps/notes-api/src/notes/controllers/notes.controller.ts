@@ -3,9 +3,10 @@
  * Thin HTTP layer only — all logic lives in `NotesService`.
  *
  * Three listing styles live side by side to demonstrate all three
- * pagination packages in this monorepo:
- *   - v1: `findAll`       — Relay-style `{ edges, pageInfo }` (`@mykks32/pagination-relay`, unreshaped)
- *   - v2: `findAllCursor`  — flat REST cursor pagination `{ data, meta, links }` (`@mykks32/pagination-cursor`)
+ * pagination packages in this monorepo, each running its own independent
+ * Mongo engine (v1 and v2 do NOT share a paginator call):
+ *   - v1: `findAll`       — Relay-style `{ edges, pageInfo }`, via `@mykks32/pagination-relay`'s own Mongo engine
+ *   - v2: `findAllCursor`  — flat REST cursor pagination `{ data, meta, links }`, via `@mykks32/pagination-cursor`'s own Mongo engine
  *   - v3: `findAllOffset`  — classic page/limit pagination `{ data, meta, links }` (`@mykks32/pagination-offset`)
  *
  * Create/read-one/update/delete don't vary by pagination style, so they're
@@ -71,16 +72,16 @@ export class NotesController {
   /**
    * `GET /v2/notes` — cursor-paginated list, flat REST envelope.
    *
-   * Same query params and underlying seek-filter pagination as v1's
-   * `findAll` — only the response shape differs (`{ data, meta, links }`
-   * instead of `{ edges, pageInfo }`), via `@mykks32/pagination-cursor`.
+   * Same query params and pagination semantics as v1's `findAll`, but runs
+   * on `@mykks32/pagination-cursor`'s *own* Mongo cursor engine — a
+   * separate keyset paginator, not a reshape of v1's result.
    */
   @Get()
   @Version('2')
   async findAllCursor(@Query() query: ListNotesQueryDto): Promise<PaginatedResponseSerializer<Partial<NoteSerializer>>> {
-    const page = await this.notesService.findAll(query);
-    const data = page.edges.map((edge) => {
-      const node = response(NoteSerializer, edge.node as NoteDocument);
+    const page = await this.notesService.findAllCursor(query);
+    const data = page.rows.map((row) => {
+      const node = response(NoteSerializer, row as NoteDocument);
       return applyFieldSelection(node, query.include, query.exclude);
     });
     return toPaginatedResponse(BASE_PATH_V2, query, page.pageInfo, data, page.totalCount);

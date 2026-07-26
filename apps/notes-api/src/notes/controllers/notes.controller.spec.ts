@@ -15,6 +15,7 @@ describe('NotesController', () => {
   let notesService: {
     create: jest.Mock;
     findAll: jest.Mock;
+    findAllCursor: jest.Mock;
     findAllOffset: jest.Mock;
     findOne: jest.Mock;
     update: jest.Mock;
@@ -39,6 +40,7 @@ describe('NotesController', () => {
     notesService = {
       create: jest.fn(),
       findAll: jest.fn(),
+      findAllCursor: jest.fn(),
       findAllOffset: jest.fn(),
       findOne: jest.fn(),
       update: jest.fn(),
@@ -95,20 +97,21 @@ describe('NotesController', () => {
     });
   });
 
-  describe('findAllCursor (v2, flat REST envelope)', () => {
-    it('maps every node through NoteSerializer into a flat data array, with meta/links built from pageInfo', async () => {
+  describe("findAllCursor (v2, flat REST envelope, pagination-cursor's own engine)", () => {
+    it('maps every row through NoteSerializer into a flat data array, with meta/links built from pageInfo', async () => {
       const doc = fakeNoteDocument();
       const page = {
-        edges: [{ cursor: 'cursor-1', node: doc }],
+        rows: [doc],
         pageInfo: { hasNextPage: true, hasPreviousPage: false, startCursor: 'cursor-1', endCursor: 'cursor-1' },
         totalCount: 42,
       };
-      notesService.findAll.mockResolvedValue(page);
+      notesService.findAllCursor.mockResolvedValue(page);
 
       const query = { first: 10 };
       const result = await controller.findAllCursor(query);
 
-      expect(notesService.findAll).toHaveBeenCalledWith(query);
+      expect(notesService.findAllCursor).toHaveBeenCalledWith(query);
+      expect(notesService.findAll).not.toHaveBeenCalled();
       expect(result.meta).toEqual({
         count: 42,
         hasNextPage: true,
@@ -124,8 +127,8 @@ describe('NotesController', () => {
     });
 
     it('returns an empty data array when the service returns no results', async () => {
-      const page = { edges: [], pageInfo: { hasNextPage: false, hasPreviousPage: false, startCursor: null, endCursor: null } };
-      notesService.findAll.mockResolvedValue(page);
+      const page = { rows: [], pageInfo: { hasNextPage: false, hasPreviousPage: false, startCursor: null, endCursor: null } };
+      notesService.findAllCursor.mockResolvedValue(page);
 
       const result = await controller.findAllCursor({});
 
@@ -136,10 +139,10 @@ describe('NotesController', () => {
     it('applies "include" to restrict each item to the requested fields plus id', async () => {
       const doc = fakeNoteDocument();
       const page = {
-        edges: [{ cursor: 'cursor-1', node: doc }],
+        rows: [doc],
         pageInfo: { hasNextPage: false, hasPreviousPage: false, startCursor: 'cursor-1', endCursor: 'cursor-1' },
       };
-      notesService.findAll.mockResolvedValue(page);
+      notesService.findAllCursor.mockResolvedValue(page);
 
       const result = await controller.findAllCursor({ include: ['title'] });
 
