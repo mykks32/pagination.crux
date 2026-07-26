@@ -1,0 +1,69 @@
+{
+  "name": "@mykks32/pagination-offset",
+  "version": "0.1.0",
+  "description": "Classic page/limit (offset) pagination for NestJS + Mongoose, with a REST data/meta/links envelope",
+  "author": "Shree Krishna Yadav",
+  "license": "MIT",
+  "keywords": [
+    "nestjs",
+    "pagination",
+    "offset-pagination",
+    "page-pagination",
+    "mongodb",
+    "mongoose"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@github-personal/mykks32/pagination.crux.git"
+  },
+  "main": "dist/index.js",
+  "module": "dist/index.mjs",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist",
+    "LICENSE"
+  ],
+  "sideEffects": false,
+  "engines": {
+    "node": ">=18"
+  },
+  "packageManager": "pnpm@9.0.0",
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com",
+    "access": "public"
+  },
+  "scripts": {
+    "build": "tsup",
+    "clean": "rm -rf dist",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:cov": "jest --coverage",
+    "lint": "eslint \"{src,test}/**/*.ts\"",
+    "lint:fix": "eslint \"{src,test}/**/*.ts\" --fix",
+    "format": "prettier --write \"{src,test}/**/*.ts\"",
+    "format:check": "prettier --check \"{src,test}/**/*.ts\"",
+    "prepublishOnly": "pnpm run clean && pnpm run build"
+  },
+  "peerDependencies": {
+    "@nestjs/common": "^10.0.0",
+    "class-transformer": "^0.5.0",
+    "class-validator": "^0.14.0",
+    "mongoose": "^8.0.0",
+    "reflect-metadata": "^0.1.13 || ^0.2.0"
+  },
+  "devDependencies": {
+    "@nestjs/common": "^10.0.0",
+    "class-transformer": "^0.5.1",
+    "class-validator": "^0.14.1",
+    "mongoose": "^8.0.0",
+    "reflect-metadata": "^0.2.2"
+  }
+}
