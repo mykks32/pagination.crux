@@ -38,8 +38,8 @@ jobs:
             type=raw,value=latest
 
       # Build context is the repo root (not apps/notes-api) because the
-      # Dockerfile needs the sibling packages/pagination workspace package
-      # too — see the comment at the top of apps/notes-api/Dockerfile.
+      # Dockerfile needs three sibling packages/pagination-* workspace
+      # packages too — see the comment at the top of apps/notes-api/Dockerfile.
       - name: Build and push
         uses: docker/build-push-action@v6
         with:
