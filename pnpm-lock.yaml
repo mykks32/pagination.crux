@@ -44,9 +44,15 @@ importers:
 
   apps/notes-api:
     dependencies:
-      '@mykks32/pagination':
+      '@mykks32/pagination-cursor':
         specifier: workspace:*
-        version: link:../../packages/pagination
+        version: link:../../packages/pagination-cursor
+      '@mykks32/pagination-offset':
+        specifier: workspace:*
+        version: link:../../packages/pagination-offset
+      '@mykks32/pagination-relay':
+        specifier: workspace:*
+        version: link:../../packages/pagination-relay
       '@nestjs/common':
         specifier: ^10.4.22
         version: 10.4.22(class-transformer@0.5.1)(class-validator@0.14.4)(reflect-metadata@0.2.2)(rxjs@7.8.2)
@@ -106,7 +112,40 @@ importers:
         specifier: ^2.0.0
         version: 2.0.0(@types/node@20.19.43)(typescript@5.9.3)
 
-  packages/pagination:
+  packages/pagination-cursor:
+    devDependencies:
+      '@mykks32/pagination-relay':
+        specifier: workspace:*
+        version: link:../pagination-relay
+      class-transformer:
+        specifier: ^0.5.1
+        version: 0.5.1
+      class-validator:
+        specifier: ^0.14.1
+        version: 0.14.4
+      reflect-metadata:
+        specifier: ^0.2.2
+        version: 0.2.2
+
+  packages/pagination-offset:
+    devDependencies:
+      '@nestjs/common':
+        specifier: ^10.0.0
+        version: 10.4.22(class-transformer@0.5.1)(class-validator@0.14.4)(reflect-metadata@0.2.2)(rxjs@7.8.2)
+      class-transformer:
+        specifier: ^0.5.1
+        version: 0.5.1
+      class-validator:
+        specifier: ^0.14.1
+        version: 0.14.4
+      mongoose:
+        specifier: ^8.0.0
+        version: 8.24.1
+      reflect-metadata:
+        specifier: ^0.2.2
+        version: 0.2.2
+
+  packages/pagination-relay:
     devDependencies:
       '@nestjs/common':
         specifier: ^10.0.0
