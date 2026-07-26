@@ -1,6 +1,6 @@
 {
   "name": "@mykks32/pagination-cursor",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Flat REST envelope (data/meta/links) adapter for @mykks32/pagination-relay's cursor pagination",
   "author": "Shree Krishna Yadav",
   "license": "MIT",
