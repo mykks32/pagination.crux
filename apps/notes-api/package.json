@@ -2,7 +2,7 @@
   "name": "notes-api",
   "version": "0.1.1",
   "private": true,
-  "description": "Demo NestJS + Mongoose REST API showing full Notes CRUD and cursor pagination via pagination",
+  "description": "Demo NestJS + Mongoose REST API showing full Notes CRUD across three pagination styles: relay (v1), cursor-REST (v2), offset (v3)",
   "author": "Shree Krishna Yadav",
   "license": "MIT",
   "engines": {
@@ -29,7 +29,9 @@
     "format:check": "prettier --check \"{src,scripts,test}/**/*.ts\""
   },
   "dependencies": {
-    "@mykks32/pagination": "workspace:*",
+    "@mykks32/pagination-cursor": "workspace:*",
+    "@mykks32/pagination-offset": "workspace:*",
+    "@mykks32/pagination-relay": "workspace:*",
     "@nestjs/common": "^10.4.22",
     "@nestjs/config": "^3.3.0",
     "@nestjs/core": "^10.4.22",

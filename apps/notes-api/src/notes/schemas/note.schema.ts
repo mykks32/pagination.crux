@@ -48,3 +48,6 @@ export type NoteDocument = HydratedDocument<Note>;
  */
 export const NoteSchema = SchemaFactory.createForClass(Note);
 NoteSchema.index({ createdAt: -1, _id: -1 });
+
+/** Backs the `search` query param — a MongoDB text index tokenizes/ranks matches, far cheaper than a `$regex` scan. */
+NoteSchema.index({ title: 'text', content: 'text' });
