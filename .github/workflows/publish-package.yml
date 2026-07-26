@@ -1,9 +1,9 @@
-name: Publish @mykks32/pagination
+name: Publish pagination packages
 
-# Builds and publishes packages/pagination to GitHub Packages (not the
-# public npm registry — see publishConfig.registry in its package.json) on
-# every version tag, mirroring how docker-publish.yml ships the notes-api
-# image on the same trigger.
+# Builds and publishes all three pagination packages to GitHub Packages
+# (not the public npm registry — see publishConfig.registry in each
+# package.json) on every version tag, mirroring how docker-publish.yml
+# ships the notes-api image on the same trigger.
 on:
   push:
     tags:
@@ -15,6 +15,18 @@ jobs:
     permissions:
       contents: read
       packages: write
+    strategy:
+      # Independent packages — one failing to publish shouldn't block the
+      # others.
+      fail-fast: false
+      matrix:
+        package:
+          - name: '@mykks32/pagination-relay'
+            path: packages/pagination-relay
+          - name: '@mykks32/pagination-cursor'
+            path: packages/pagination-cursor
+          - name: '@mykks32/pagination-offset'
+            path: packages/pagination-offset
     steps:
       - uses: actions/checkout@v4
 
@@ -30,16 +42,28 @@ jobs:
           registry-url: 'https://npm.pkg.github.com'
           scope: '@mykks32'
 
+      # Installs the whole workspace (not just this package) since
+      # pagination-cursor depends on pagination-relay via the workspace
+      # protocol at build time.
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      # Each matrix entry is an isolated runner with a fresh checkout — no
+      # dist/ from any other matrix job carries over. pagination-cursor
+      # needs pagination-relay's dist/ (types + JS) to exist to build
+      # itself, so build relay unconditionally first in every job, not just
+      # relay's own. A harmless no-op extra step for the relay and offset
+      # (offset has no such dependency) jobs.
+      - name: Build @mykks32/pagination-relay (dependency for pagination-cursor)
+        run: pnpm --filter @mykks32/pagination-relay run build
+
       - name: Build
-        run: pnpm --filter @mykks32/pagination run build
+        run: pnpm --filter ${{ matrix.package.name }} run build
 
       # --no-git-checks: this runs from a tag checkout (not a branch HEAD),
       # which pnpm's default clean-working-tree check can otherwise reject.
       - name: Publish
-        working-directory: packages/pagination
+        working-directory: ${{ matrix.package.path }}
         run: pnpm publish --no-git-checks
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
