@@ -1,6 +1,6 @@
 {
   "name": "@mykks32/pagination",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Pagination package to integrate in NestJs application",
   "author": "Shree Krishna Yadav",
   "license": "MIT",
@@ -37,6 +37,7 @@
   },
   "packageManager": "pnpm@9.0.0",
   "publishConfig": {
+    "registry": "https://npm.pkg.github.com",
     "access": "public"
   },
   "scripts": {

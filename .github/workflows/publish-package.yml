@@ -1,0 +1,45 @@
+name: Publish @mykks32/pagination
+
+# Builds and publishes packages/pagination to GitHub Packages (not the
+# public npm registry — see publishConfig.registry in its package.json) on
+# every version tag, mirroring how docker-publish.yml ships the notes-api
+# image on the same trigger.
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      # registry-url + scope make actions/setup-node write a .npmrc that
+      # routes @mykks32/* publishes to GitHub Packages, authenticated via
+      # NODE_AUTH_TOKEN below.
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20.x
+          cache: 'pnpm'
+          registry-url: 'https://npm.pkg.github.com'
+          scope: '@mykks32'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build
+        run: pnpm --filter @mykks32/pagination run build
+
+      # --no-git-checks: this runs from a tag checkout (not a branch HEAD),
+      # which pnpm's default clean-working-tree check can otherwise reject.
+      - name: Publish
+        working-directory: packages/pagination
+        run: pnpm publish --no-git-checks
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

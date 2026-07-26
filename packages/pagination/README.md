@@ -20,6 +20,18 @@ concurrent writes.
 
 ## Install
 
+Published to **GitHub Packages**, not the public npm registry (see
+`publishConfig` in `package.json`). Unlike npmjs.org, GitHub Packages
+requires authentication even for public packages, so consumers need a
+`.npmrc` pointing the `@mykks32` scope at it plus a token with at least
+`read:packages`:
+
+```
+# .npmrc
+@mykks32:registry=https://npm.pkg.github.com
+//npm.pkg.github.com/:_authToken=${GITHUB_TOKEN}
+```
+
 ```bash
 pnpm add @mykks32/pagination
 ```
