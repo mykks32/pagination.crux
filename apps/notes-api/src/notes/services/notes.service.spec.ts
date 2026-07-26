@@ -3,15 +3,16 @@
  * are both provided as jest mocks — this suite is about NotesService's own
  * logic (id validation, not-found handling, how it shapes pagination
  * options), not about Mongoose or the pagination library themselves (those
- * are covered by @mykks32/pagination's own test suite).
+ * are covered by @mykks32/pagination-relay's own test suite).
  */
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { getModelToken } from '@nestjs/mongoose';
 import { Test } from '@nestjs/testing';
-import { MongoCursorPaginationService } from '@mykks32/pagination';
+import { MongoCursorPaginationService } from '@mykks32/pagination-relay';
+import { MongoOffsetPaginationService } from '@mykks32/pagination-offset';
 import { Types } from 'mongoose';
 import { NotesService } from './notes.service';
-import { Note } from './schemas/note.schema';
+import { Note } from '../schemas/note.schema';
 
 describe('NotesService', () => {
   let service: NotesService;
@@ -24,6 +25,7 @@ describe('NotesService', () => {
     findByIdAndDelete: jest.Mock;
   };
   let paginationService: { paginate: jest.Mock };
+  let offsetPaginationService: { paginate: jest.Mock };
 
   /** A syntactically valid ObjectId string — distinct per test run so tests can't accidentally rely on id equality. */
   const validId = () => new Types.ObjectId().toHexString();
@@ -36,14 +38,17 @@ describe('NotesService', () => {
       findByIdAndDelete: jest.fn(),
     };
     paginationService = { paginate: jest.fn() };
+    offsetPaginationService = { paginate: jest.fn() };
 
     const moduleRef = await Test.createTestingModule({
       providers: [
         NotesService,
         { provide: getModelToken(Note.name), useValue: noteModel },
-        // MongoCursorPaginationService is injected by class reference, not
-        // a string token, so the mock has to be provided under that same class.
+        // MongoCursorPaginationService/MongoOffsetPaginationService are
+        // injected by class reference, not a string token, so the mocks
+        // have to be provided under those same classes.
         { provide: MongoCursorPaginationService, useValue: paginationService },
+        { provide: MongoOffsetPaginationService, useValue: offsetPaginationService },
       ],
     }).compile();
 
@@ -87,10 +92,10 @@ describe('NotesService', () => {
       expect(paginationService.paginate).toHaveBeenCalledWith(noteModel, expect.objectContaining({ filter: {} }));
     });
 
-    it('forwards a custom sortBy/sortDirection and the first/after cursor args untouched', async () => {
+    it('forwards a custom sort/order and the first/after cursor args untouched', async () => {
       paginationService.paginate.mockResolvedValue({ edges: [], pageInfo: {} });
 
-      await service.findAll({ first: 10, after: 'cursor-abc', sortBy: 'title', sortDirection: 'ASC', includeTotalCount: true });
+      await service.findAll({ first: 10, after: 'cursor-abc', sort: 'title', order: 'asc', includeTotalCount: true });
 
       expect(paginationService.paginate).toHaveBeenCalledWith(
         noteModel,
@@ -100,6 +105,79 @@ describe('NotesService', () => {
           includeTotalCount: true,
         }),
       );
+    });
+
+    it('rejects a sort field outside the whitelist', async () => {
+      await expect(service.findAll({ sort: 'content' })).rejects.toBeInstanceOf(BadRequestException);
+      expect(paginationService.paginate).not.toHaveBeenCalled();
+    });
+
+    it('turns "search" into a $text filter', async () => {
+      paginationService.paginate.mockResolvedValue({ edges: [], pageInfo: {} });
+
+      await service.findAll({ search: 'groceries' });
+
+      expect(paginationService.paginate).toHaveBeenCalledWith(
+        noteModel,
+        expect.objectContaining({ filter: { archived: false, $text: { $search: 'groceries' } } }),
+      );
+    });
+
+    it('merges whitelisted "filters" into the query filter', async () => {
+      paginationService.paginate.mockResolvedValue({ edges: [], pageInfo: {} });
+
+      await service.findAll({ filters: { tags: 'work' } });
+
+      expect(paginationService.paginate).toHaveBeenCalledWith(
+        noteModel,
+        expect.objectContaining({ filter: { archived: false, tags: 'work' } }),
+      );
+    });
+
+    it('rejects a filter key outside the whitelist', async () => {
+      await expect(service.findAll({ filters: { notAField: 'x' } })).rejects.toBeInstanceOf(BadRequestException);
+      expect(paginationService.paginate).not.toHaveBeenCalled();
+    });
+
+    it('rejects a filter value that is a nested object (a potential Mongo operator injection)', async () => {
+      await expect(service.findAll({ filters: { title: { $ne: null } } })).rejects.toBeInstanceOf(BadRequestException);
+      expect(paginationService.paginate).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('findAllOffset', () => {
+    it('defaults to sorting by createdAt DESC and excluding archived notes', async () => {
+      const page = {
+        data: [],
+        meta: { page: 1, limit: 20, count: 0, totalItems: 0, totalPages: 0, hasPreviousPage: false, hasNextPage: false },
+      };
+      offsetPaginationService.paginate.mockResolvedValue(page);
+
+      const result = await service.findAllOffset({ page: 1, limit: 20 });
+
+      expect(offsetPaginationService.paginate).toHaveBeenCalledWith(noteModel, {
+        args: { page: 1, limit: 20 },
+        sort: [{ field: 'createdAt', direction: 'DESC' }],
+        filter: { archived: false },
+      });
+      expect(result).toBe(page);
+    });
+
+    it('shares the same sort/filter/search/filters logic as the cursor path', async () => {
+      offsetPaginationService.paginate.mockResolvedValue({ data: [], meta: {} });
+
+      await service.findAllOffset({ page: 2, limit: 10, sort: 'title', order: 'asc', search: 'foo', filters: { archived: true } });
+
+      expect(offsetPaginationService.paginate).toHaveBeenCalledWith(noteModel, {
+        args: { page: 2, limit: 10 },
+        sort: [{ field: 'title', direction: 'ASC' }],
+        filter: { archived: true, $text: { $search: 'foo' } },
+      });
+    });
+
+    it('rejects a sort field outside the whitelist, same as the cursor path', async () => {
+      await expect(service.findAllOffset({ page: 1, limit: 20, sort: 'content' })).rejects.toBeInstanceOf(BadRequestException);
+      expect(offsetPaginationService.paginate).not.toHaveBeenCalled();
     });
   });
 
