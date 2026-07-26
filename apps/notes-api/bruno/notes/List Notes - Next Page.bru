@@ -16,13 +16,13 @@ params:query {
 }
 
 docs {
-  Run "List Notes - First Page" first — it stores `pageInfo.endCursor` into
+  Run "List Notes - First Page" first — it stores `meta.endCursor` into
   the {{endCursor}} variable this request pages forward from.
 }
 
 script:post-response {
-  if (res.body && res.body.pageInfo) {
-    bru.setVar("endCursor", res.body.pageInfo.endCursor);
-    bru.setVar("startCursor", res.body.pageInfo.startCursor);
+  if (res.body && res.body.meta) {
+    bru.setVar("endCursor", res.body.meta.endCursor);
+    bru.setVar("startCursor", res.body.meta.startCursor);
   }
 }

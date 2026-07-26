@@ -1,0 +1,29 @@
+meta {
+  name: List Notes V2 - Cursor REST
+  type: http
+  seq: 6
+}
+
+get {
+  url: {{baseUrlV2}}/notes?first=10&includeTotalCount=true
+  body: none
+  auth: none
+}
+
+params:query {
+  first: 10
+  includeTotalCount: true
+}
+
+docs {
+  Same cursor pagination as "List Notes - First Page" (v1), but note the
+  response shape: `{ data, meta, links }`, no `edges`/`node` wrapping.
+  Follow `links.next` on subsequent requests instead of manually building
+  `?first=10&after=...` — it's already the exact next-page URL.
+}
+
+script:post-response {
+  if (res.body && res.body.links) {
+    bru.setVar("v2NextLink", res.body.links.next);
+  }
+}

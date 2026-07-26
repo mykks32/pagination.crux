@@ -1,0 +1,24 @@
+meta {
+  name: List Notes V3 - Offset
+  type: http
+  seq: 7
+}
+
+get {
+  url: {{baseUrlV3}}/notes?page=1&limit=10
+  body: none
+  auth: none
+}
+
+params:query {
+  page: 1
+  limit: 10
+}
+
+docs {
+  Classic page/limit pagination — response always includes
+  `meta.totalItems`/`totalPages` (no opt-in flag needed, unlike v1/v2's
+  `includeTotalCount`) and `links.first`/`last` for jump-to-any-page
+  navigation. Change `page` to walk through results; `links.next`/
+  `links.previous` are `null` at the respective ends.
+}

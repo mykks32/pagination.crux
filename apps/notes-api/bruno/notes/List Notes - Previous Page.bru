@@ -17,12 +17,12 @@ params:query {
 
 docs {
   Backward pagination — pages toward the start of the list using
-  `pageInfo.startCursor` captured from a previous list request.
+  `meta.startCursor` captured from a previous list request.
 }
 
 script:post-response {
-  if (res.body && res.body.pageInfo) {
-    bru.setVar("endCursor", res.body.pageInfo.endCursor);
-    bru.setVar("startCursor", res.body.pageInfo.startCursor);
+  if (res.body && res.body.meta) {
+    bru.setVar("endCursor", res.body.meta.endCursor);
+    bru.setVar("startCursor", res.body.meta.startCursor);
   }
 }

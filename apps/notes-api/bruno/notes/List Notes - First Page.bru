@@ -16,10 +16,10 @@ params:query {
 }
 
 script:post-response {
-  // Capture pageInfo cursors so the "Next Page" / "Previous Page" requests
+  // Capture meta cursors so the "Next Page" / "Previous Page" requests
   // in this collection can chain off this response.
-  if (res.body && res.body.pageInfo) {
-    bru.setVar("endCursor", res.body.pageInfo.endCursor);
-    bru.setVar("startCursor", res.body.pageInfo.startCursor);
+  if (res.body && res.body.meta) {
+    bru.setVar("endCursor", res.body.meta.endCursor);
+    bru.setVar("startCursor", res.body.meta.startCursor);
   }
 }
