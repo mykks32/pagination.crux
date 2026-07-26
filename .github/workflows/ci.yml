@@ -1,0 +1,57 @@
+name: CI
+
+# Runs on every push to main and on every PR targeting main, so a broken
+# build/lint/test is caught before it merges rather than after.
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      # Test against the oldest and newest supported Node majors (matches
+      # the "node": ">=18" engines constraint in package.json) so a change
+      # that only works on one of them fails visibly here.
+      matrix:
+        node-version: [18.x, 20.x]
+    steps:
+      - uses: actions/checkout@v4
+
+      # Installs the pnpm CLI itself (separate from Node/npm) at the same
+      # major version pinned in package.json's "packageManager" field.
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'pnpm'
+
+      # --frozen-lockfile fails the build instead of silently updating
+      # pnpm-lock.yaml if it's out of sync with any package.json.
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # Runs across every workspace package (packages/pagination,
+      # apps/notes-api) via the root package.json's recursive scripts.
+      - name: Lint
+        run: pnpm run lint
+
+      - name: Format check
+        run: pnpm run format:check
+
+      - name: Test
+        run: pnpm run test:cov
+
+      # notes-api's e2e suite boots the real Nest app against an in-memory
+      # MongoDB (mongodb-memory-server) — not part of the recursive `test`
+      # script above, so it's invoked directly.
+      - name: Test (notes-api e2e)
+        run: pnpm --filter notes-api run test:e2e
+
+      - name: Build
+        run: pnpm run build
