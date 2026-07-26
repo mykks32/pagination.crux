@@ -6,7 +6,7 @@ consumes all of them side by side:
 | Path | What it is |
 | --- | --- |
 | [`packages/pagination-relay`](packages/pagination-relay) | `@mykks32/pagination-relay` — the cursor (keyset) pagination **engine**: Relay Cursor Connections shape (`edges`/`node`/`cursor` + `pageInfo`). Publishable. |
-| [`packages/pagination-cursor`](packages/pagination-cursor) | `@mykks32/pagination-cursor` — a flat REST envelope (`{ data, meta, links }`) for cursor pagination, plus sort/filter query resolution. Self-contained: no dependency on `pagination-relay` or `pagination-offset`. Publishable. |
+| [`packages/pagination-cursor`](packages/pagination-cursor) | `@mykks32/pagination-cursor` — a flat REST envelope (`{ data, meta, links }`) for cursor pagination, backed by its own Mongo keyset paginator (not a reshape of `pagination-relay`'s). Self-contained: no dependency on `pagination-relay` or `pagination-offset`. Publishable. |
 | [`packages/pagination-offset`](packages/pagination-offset) | `@mykks32/pagination-offset` — a self-contained, *different* pagination style: classic page/limit, with its own REST envelope. No dependency on the other two. Publishable. |
 | [`apps/notes-api`](apps/notes-api) | A demo NestJS + Mongoose REST API (full Notes CRUD) exposing all three styles side by side, one per API version (`/v1`, `/v2`, `/v3`). |
 
@@ -30,11 +30,11 @@ pnpm run lint
 pnpm run format:check
 ```
 
-Build order matters: `pagination-cursor` imports `pagination-relay`'s
-built `dist/` at compile time, so `pagination-relay` must build first.
-`pnpm -r run build` already respects this (topological, via the
-workspace protocol dependency) — see `.github/workflows/publish-package.yml`
-if you're scripting a build outside of `pnpm -r`.
+The three `packages/*` are independent of each other and can build in any
+order — only `apps/notes-api` depends on (and must build after) all three.
+`pnpm -r run build` already respects this (topological, via the workspace
+protocol dependency) — see `.github/workflows/publish-package.yml` if
+you're scripting a build outside of `pnpm -r`.
 
 Each project also has its own README with details specific to it:
 - [packages/pagination-relay/README.md](packages/pagination-relay/README.md)
@@ -52,17 +52,16 @@ for NestJS DI to work — don't let an automated `lint:fix` "clean" them.
 .
 ├── packages/
 │   ├── pagination-relay/    # @mykks32/pagination-relay — cursor pagination engine
-│   ├── pagination-cursor/   # @mykks32/pagination-cursor — flat REST envelope on top of pagination-relay
+│   ├── pagination-cursor/   # @mykks32/pagination-cursor — flat REST envelope, own Mongo cursor engine
 │   └── pagination-offset/   # @mykks32/pagination-offset — standalone page/limit pagination
 └── apps/
     └── notes-api/           # demo NestJS app: /v1 (relay), /v2 (cursor-REST), /v3 (offset)
 ```
 
-The packages are linked via pnpm's workspace protocol
-(`"@mykks32/pagination-*": "workspace:*"` in `apps/notes-api/package.json`,
-and in `pagination-cursor/package.json` for its dependency on
-`pagination-relay`), so everything always builds against local source, not
-a published version.
+`apps/notes-api/package.json` links all three via pnpm's workspace
+protocol (`"@mykks32/pagination-*": "workspace:*"`), so it always builds
+against local source, not a published version. None of the three
+`packages/*` link to each other this way — each is workspace-independent.
 
 ## Tooling
 

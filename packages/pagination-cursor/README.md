@@ -1,35 +1,35 @@
 # @mykks32/pagination-cursor
 
 A flat REST envelope (`{ data, meta, links }`) for cursor-based
-pagination — standalone, with **no dependency on
+pagination, backed by its **own** Mongo keyset ("seek method") paginator —
+standalone, with **no dependency on
 [`@mykks32/pagination-relay`](../pagination-relay)** or any other package
-in this monorepo. It reshapes any `PageInfo`-shaped page-info object
-(structurally compatible with `pagination-relay`'s output, or anything
-else with the same shape) into the response envelope most REST APIs
-actually expect, plus the query-string plumbing (a generic DTO, sort/filter
-resolution, sparse fieldsets, ad-hoc filters) to go with it.
+in this monorepo. This is not a reshape of relay's output: `paginate()`
+below queries Mongoose directly and produces its own `{ rows, pageInfo }`,
+independently of whatever `pagination-relay` does.
 
 See [`apps/notes-api`](../../apps/notes-api)'s `GET /v2/notes` for this
-package used end to end against a real Mongoose model (there, fed by
-`pagination-relay`'s `MongoCursorPaginationService` — but that's the app's
-choice, not this package's requirement).
+package's Mongo engine used end to end against a real Mongoose model,
+running side by side with (and entirely independent of) v1's
+`pagination-relay`-backed engine.
 
 ## Why this exists as its own package
 
 Relay's `edges`/`node`/`cursor` shape is a real, useful spec — but it's a
 *GraphQL* spec. Most REST API consumers don't expect (or want) a `node`
 wrapper around every item; they expect a plain array. Keeping the reshaping
-in a separate, dependency-free package means:
+*and* the Mongo query logic in a separate, dependency-free package means:
 
-- It can be fed by `pagination-relay`, a hand-rolled cursor paginator, or
-  any other source of `{ hasNextPage, hasPreviousPage, startCursor, endCursor }`
-  — nothing here assumes a specific engine underneath.
 - This package can evolve its REST conventions (`meta`/`links` shape,
   sparse fieldsets, filter query-string encoding, sort/filter whitelisting)
   independently, with zero coupling to any other package's release cycle.
+- Consumers who only want the REST convention pick this package; consumers
+  who want the Relay connection shape pick `pagination-relay` — neither
+  waits on, or depends on, the other's Mongo engine.
 - Following the same principle `pagination-offset` already applies to its
-  own `sort.util.ts`: a small amount of duplicated interface/constant
-  declarations (see `src/interfaces/`, `src/constants/`) is cheaper than a
+  own `sort.util.ts`: a small amount of duplicated logic (this package's
+  `src/mongo/`/`src/utils/cursor.util.ts` mirror `pagination-relay`'s
+  seek-filter/cursor-encoding implementation) is cheaper than a
   compile-time dependency between two packages meant to be usable alone.
 
 ## When to use this vs. the other two packages
@@ -55,7 +55,7 @@ same scope.
 pnpm add @mykks32/pagination-cursor
 ```
 
-`@nestjs/common`, `class-transformer`, `class-validator`, and
+`@nestjs/common`, `class-transformer`, `class-validator`, `mongoose`, and
 `reflect-metadata` are peer dependencies. No other package in this
 monorepo is a dependency, peer or otherwise.
 
@@ -75,9 +75,38 @@ export class ListNotesQueryDto extends CursorPaginationDto {
 }
 ```
 
-In the controller, call `@mykks32/pagination-relay`'s `paginate()` as
-usual, then hand its result to `toPaginatedResponse()` along with your
-mapped `data` array:
+In a Nest provider, inject `MongoCursorPaginationService` and call
+`.paginate()` against your Mongoose model — this runs this package's own
+Mongo keyset engine, not `pagination-relay`'s:
+
+```ts
+import { Injectable } from '@nestjs/common';
+import { InjectModel } from '@nestjs/mongoose';
+import { MongoCursorPaginationService } from '@mykks32/pagination-cursor';
+import type { Model } from 'mongoose';
+import { Note } from './note.schema';
+
+@Injectable()
+export class NotesService {
+  constructor(
+    @InjectModel(Note.name) private readonly noteModel: Model<Note>,
+    private readonly paginationService: MongoCursorPaginationService,
+  ) {}
+
+  findAll(query: ListNotesQueryDto) {
+    const { first, after, last, before } = query;
+    return this.paginationService.paginate(this.noteModel, {
+      args: { first, after, last, before },
+      sort: [{ field: 'createdAt', direction: 'DESC' }],
+      filter: { archived: false },
+      includeTotalCount: true,
+    }); // => CursorPage<Note>: { rows, pageInfo, totalCount }
+  }
+}
+```
+
+Then in the controller, hand the `CursorPage` to `toPaginatedResponse()`
+along with your mapped `data` array:
 
 ```ts
 import { Controller, Get, Query } from '@nestjs/common';
@@ -92,9 +121,9 @@ export class NotesController {
 
   @Get()
   async findAll(@Query() query: ListNotesQueryDto) {
-    const page = await this.notesService.findAll(query); // returns @mykks32/pagination-relay's PaginatedResult<Note>
+    const page = await this.notesService.findAll(query); // CursorPage<Note>: { rows, pageInfo, totalCount }
 
-    const data = page.edges.map((edge) => applyFieldSelection(edge.node, query.include, query.exclude));
+    const data = page.rows.map((row) => applyFieldSelection(row, query.include, query.exclude));
 
     return toPaginatedResponse('/v1/notes', query, page.pageInfo, data, page.totalCount);
   }
@@ -164,11 +193,12 @@ an HTTP 400 automatically inside a request context.
 src/
 ├── index.ts                                # public API barrel
 ├── constants/
-│   └── pagination.constants.ts             # DEFAULT_SORT_DIRECTION, DEFAULT_PAGE_SIZE
+│   └── pagination.constants.ts             # DEFAULT_SORT_DIRECTION, DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE, ID_FIELD, CURSOR_VERSION
 ├── errors/
-│   └── pagination.errors.ts                # InvalidSortFieldException, InvalidFilterException
+│   └── pagination.errors.ts                # InvalidSortFieldException, InvalidFilterException, InvalidCursorException, InvalidPaginationArgsException
 ├── interfaces/
-│   └── pagination.interface.ts             # SortField, SortDirection, PageInfo — standalone copies, no pagination-relay import
+│   ├── pagination.interface.ts             # SortField, SortDirection, PageInfo, CursorPaginationArgs, CursorPage<T>
+│   └── mongo-cursor-pagination-options.interface.ts  # MongoCursorPaginationOptions<T>
 ├── dto/
 │   └── cursor-pagination.dto.ts            # CursorPaginationDto — generic query shape, extend per resource
 ├── serializers/
@@ -178,8 +208,14 @@ src/
 ├── utils/
 │   ├── pagination-links.util.ts            # buildPaginatedLinks()
 │   ├── field-selection.util.ts             # applyFieldSelection()
-│   ├── sort-resolution.util.ts             # resolveSort() / resolveSortField() / resolveSortDirection()
-│   └── filter-sanitizer.util.ts            # sanitizeFilters()
+│   ├── sort-resolution.util.ts             # resolveSort() / resolveSortField() / resolveSortDirection() — query-param whitelisting
+│   ├── filter-sanitizer.util.ts            # sanitizeFilters()
+│   ├── cursor.util.ts                      # encodeCursor() / decodeCursor() — opaque cursor (de)serialization
+│   └── mongo-sort.util.ts                  # normalizeSortFields() / toMongoSortObject() / invertSort() — compound-sort mechanics
+├── mongo/
+│   ├── mongo-seek-filter.builder.ts        # buildSeekFilter() — the keyset filter itself
+│   ├── mongo-cursor-paginator.ts           # paginate() — framework-agnostic, Mongoose-only
+│   └── mongo-cursor-pagination.service.ts  # MongoCursorPaginationService — injectable Nest wrapper around paginate()
 └── to-paginated-response.util.ts           # toPaginatedResponse() — the one call a controller needs
 
 test/                                        # mirrors src/
@@ -192,13 +228,19 @@ Design principles:
   live separately, decorated with `class-transformer`'s `@Expose()`/`@Type()`
   so they participate correctly in a consuming app's global
   `ClassSerializerInterceptor` — see "Why classes, not interfaces" below.
-- **No database access anywhere in this package** (no `mongo/` folder) —
-  it reshapes and validates values a caller already has; it never queries
-  anything itself.
-- **`interfaces/pagination.interface.ts` is a standalone copy, not an
-  import, of `@mykks32/pagination-relay`'s shapes of the same name.** This
-  package has zero dependency on any other package here — see "Why this
-  exists as its own package" above.
+- **`mongo/` exists here too, not just in `pagination-relay`.** Earlier
+  versions of this package had no Mongo logic at all and only reshaped a
+  `PageInfo` computed elsewhere; it now runs its own keyset paginator so
+  v1 (relay) and v2 (this package) in `apps/notes-api` are genuinely
+  independent engines, not two views of one query.
+- **`interfaces/pagination.interface.ts`'s `SortField`/`SortDirection`/`PageInfo`
+  are standalone copies, not an import, of `@mykks32/pagination-relay`'s
+  shapes of the same name.** This package has zero dependency on any other
+  package here — see "Why this exists as its own package" above.
+- **`paginate()` returns `rows: T[]`, not `edges: Edge<T>[]`.** No
+  Relay-style `node`/`cursor` wrapping anywhere in this package's output —
+  `startCursor`/`endCursor` in `pageInfo` are derived from the first/last
+  row's own sort-field values instead of a per-row `edge.cursor`.
 - **`data`'s generic type `T` is deliberately not `@Type()`-annotated** —
   class-transformer only needs `@Type()` to know what class to *construct*
   during a plain→class pass; these response classes are only ever built
@@ -243,6 +285,11 @@ If you add a new `@Type()`-decorated class and its test throws
 | `sanitizeFilters(filters, allowedFields)` | function | Whitelists an ad-hoc `filters` object to primitive-only values, throwing `InvalidFilterException` otherwise |
 | `InvalidSortFieldException` / `InvalidFilterException` | classes (error) | Thrown by the two resolvers above; both extend Nest's `BadRequestException` |
 | `SortField` / `SortDirection` / `PageInfo` | types | Standalone copies of `pagination-relay`'s shapes of the same name |
+| `MongoCursorPaginationService` | injectable class | `.paginate(model, options)` — this package's own Mongo keyset paginator, returning `CursorPage<T>` (`{ rows, pageInfo, totalCount? }`) |
+| `CursorPaginationArgs` / `CursorPage<T>` | types | `{ first?, after?, last?, before? }` args and the paginator's result shape |
+| `InvalidCursorException` / `InvalidPaginationArgsException` | classes (error) | Thrown by the Mongo paginator for a malformed cursor or a self-contradictory `first`/`last`/`after`/`before` combination |
+| `encodeCursor(values)` / `decodeCursor(cursor)` | functions | Opaque, URL-safe cursor (de)serialization |
+| `buildSeekFilter(sort, cursorValues, direction)` | function | The keyset ("seek method") Mongo filter itself, for callers assembling a query by hand |
 
 ## Development
 
