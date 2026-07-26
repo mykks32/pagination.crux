@@ -1,0 +1,45 @@
+/** Builds the `self`/`previous`/`next` links for a paginated REST response. */
+import { DEFAULT_PAGE_SIZE, type PageInfo } from '@mykks32/pagination-relay';
+import type { CursorPaginationDto } from '../dto/cursor-pagination.dto';
+import { PaginatedLinksSerializer } from '../serializers/paginated-links.serializer';
+
+/**
+ * Everything from the incoming query except the pagination-direction
+ * fields (first/last/after/before) — carried over unchanged onto every
+ * generated link so filters/sort/search/fieldset selection survive paging.
+ */
+function sharedParams(query: CursorPaginationDto): Record<string, unknown> {
+  const { first: _first, last: _last, after: _after, before: _before, ...rest } = query;
+  return rest;
+}
+
+/** Flattens arrays/objects to strings and drops nullish entries, ready for `URLSearchParams`. */
+function stringify(params: Record<string, unknown>): Record<string, string> {
+  const out: Record<string, string> = {};
+  for (const [key, value] of Object.entries(params)) {
+    if (value === undefined || value === null) continue;
+    if (Array.isArray(value)) {
+      if (value.length > 0) out[key] = value.join(',');
+      continue;
+    }
+    out[key] = typeof value === 'object' ? JSON.stringify(value) : String(value);
+  }
+  return out;
+}
+
+export function buildPaginatedLinks(basePath: string, query: CursorPaginationDto, pageInfo: PageInfo): PaginatedLinksSerializer {
+  const shared = sharedParams(query);
+  const pageSize = query.first ?? query.last ?? DEFAULT_PAGE_SIZE;
+  const { first, last, after, before } = query;
+
+  const build = (params: Record<string, unknown>): string => {
+    const qs = new URLSearchParams(stringify({ ...shared, ...params })).toString();
+    return qs ? `${basePath}?${qs}` : basePath;
+  };
+
+  return Object.assign(new PaginatedLinksSerializer(), {
+    self: build({ first, last, after, before }),
+    previous: pageInfo.hasPreviousPage ? build({ last: pageSize, before: pageInfo.startCursor }) : null,
+    next: pageInfo.hasNextPage ? build({ first: pageSize, after: pageInfo.endCursor }) : null,
+  });
+}
