@@ -1,34 +1,44 @@
 # @mykks32/pagination-cursor
 
-A flat REST envelope (`{ data, meta, links }`) for cursor-based pagination
-— an adapter on top of [`@mykks32/pagination-relay`](../pagination-relay),
-not a second pagination engine. It takes relay's native
-`{ edges, pageInfo }` output and reshapes it into the response shape most
-REST APIs actually expect, plus the query-string plumbing (a generic DTO,
-sparse fieldsets, ad-hoc filters) to go with it.
+A flat REST envelope (`{ data, meta, links }`) for cursor-based
+pagination — standalone, with **no dependency on
+[`@mykks32/pagination-relay`](../pagination-relay)** or any other package
+in this monorepo. It reshapes any `PageInfo`-shaped page-info object
+(structurally compatible with `pagination-relay`'s output, or anything
+else with the same shape) into the response envelope most REST APIs
+actually expect, plus the query-string plumbing (a generic DTO, sort/filter
+resolution, sparse fieldsets, ad-hoc filters) to go with it.
 
 See [`apps/notes-api`](../../apps/notes-api)'s `GET /v2/notes` for this
-package used end to end against a real Mongoose model.
+package used end to end against a real Mongoose model (there, fed by
+`pagination-relay`'s `MongoCursorPaginationService` — but that's the app's
+choice, not this package's requirement).
 
-## Why this exists (and why it isn't part of `pagination-relay`)
+## Why this exists as its own package
 
 Relay's `edges`/`node`/`cursor` shape is a real, useful spec — but it's a
 *GraphQL* spec. Most REST API consumers don't expect (or want) a `node`
 wrapper around every item; they expect a plain array. Keeping the reshaping
-in a separate package means:
+in a separate, dependency-free package means:
 
-- `pagination-relay` stays usable as-is for GraphQL resolvers, with zero
-  REST opinions baked in.
+- It can be fed by `pagination-relay`, a hand-rolled cursor paginator, or
+  any other source of `{ hasNextPage, hasPreviousPage, startCursor, endCursor }`
+  — nothing here assumes a specific engine underneath.
 - This package can evolve its REST conventions (`meta`/`links` shape,
-  sparse fieldsets, filter query-string encoding) independently, without
-  touching the actual seek-filter/cursor engine underneath.
+  sparse fieldsets, filter query-string encoding, sort/filter whitelisting)
+  independently, with zero coupling to any other package's release cycle.
+- Following the same principle `pagination-offset` already applies to its
+  own `sort.util.ts`: a small amount of duplicated interface/constant
+  declarations (see `src/interfaces/`, `src/constants/`) is cheaper than a
+  compile-time dependency between two packages meant to be usable alone.
 
 ## When to use this vs. the other two packages
 
 - **Pick this package** when you want cursor pagination's scalability (no
   `skip()` cost, stable results under concurrent writes) exposed as a
   conventional REST list endpoint — most public/external REST APIs land
-  here.
+  here. Pair it with `pagination-relay`'s Mongo paginator (or your own) to
+  actually produce the `PageInfo`/rows it reshapes.
 - **Pick `pagination-relay` directly** if you're building GraphQL, or you
   specifically want the Relay connection shape.
 - **Pick `pagination-offset`** if clients need page-number navigation
@@ -42,13 +52,12 @@ Published to **GitHub Packages**, not the public npm registry. See
 same scope.
 
 ```bash
-pnpm add @mykks32/pagination-cursor @mykks32/pagination-relay
+pnpm add @mykks32/pagination-cursor
 ```
 
-`@mykks32/pagination-relay`, `class-transformer`, `class-validator`, and
-`reflect-metadata` are peer dependencies. `pagination-relay` is a *real*
-dependency here (not just a peer for version alignment) — this package's
-whole job is reshaping its output.
+`@nestjs/common`, `class-transformer`, `class-validator`, and
+`reflect-metadata` are peer dependencies. No other package in this
+monorepo is a dependency, peer or otherwise.
 
 ## How to use it
 
@@ -128,44 +137,52 @@ Applied to the *already-serialized* response object, not the database
 projection — so the sort/cursor fields are always fetched (cursor encoding
 needs them), and only the client-facing shape is narrowed.
 
-### Ad-hoc `filters` — sanitize before use
+### Sort/filter resolution — whitelist before it reaches your query
 
-`CursorPaginationDto.filters` is a generic `Record<string, unknown>`
-parsed from JSON in the query string. **Never merge it straight into a
-Mongo filter** — whitelist it first:
+`CursorPaginationDto.sort`/`.order`/`.filters` are free-form (`filters` is a
+generic `Record<string, unknown>` parsed from JSON in the query string).
+**Never merge `filters` straight into a Mongo filter, and never sort on an
+unvalidated field** — this package ships the whitelisting so every consumer
+doesn't have to hand-roll it:
 
 ```ts
-const ALLOWED_FILTER_FIELDS = ['title', 'tags', 'archived'];
+import { resolveSort, sanitizeFilters } from '@mykks32/pagination-cursor';
 
-function sanitizeFilters(filters?: Record<string, unknown>) {
-  if (!filters) return {};
-  for (const [field, value] of Object.entries(filters)) {
-    if (!ALLOWED_FILTER_FIELDS.includes(field)) throw new BadRequestException(`"${field}" is not filterable.`);
-    if (typeof value === 'object') throw new BadRequestException(`"${field}" can't be an object.`); // blocks {"$where": "..."} etc.
-  }
-  return filters;
-}
+const SORTABLE_FIELDS = ['createdAt', 'updatedAt', 'title'] as const;
+const FILTERABLE_FIELDS = ['title', 'tags', 'archived'] as const;
+
+const sort = resolveSort(query, SORTABLE_FIELDS, 'createdAt'); // throws InvalidSortFieldException if query.sort isn't whitelisted
+const filters = sanitizeFilters(query.filters, FILTERABLE_FIELDS); // throws InvalidFilterException on an unknown key or a non-primitive value (blocks {"$where": "..."} etc.)
 ```
 
-(`apps/notes-api`'s `NotesService` has the full version of this.)
+Both exceptions extend Nest's `BadRequestException`, so they translate to
+an HTTP 400 automatically inside a request context.
 
 ## File structure
 
 ```
 src/
-├── index.ts                              # public API barrel
+├── index.ts                                # public API barrel
+├── constants/
+│   └── pagination.constants.ts             # DEFAULT_SORT_DIRECTION, DEFAULT_PAGE_SIZE
+├── errors/
+│   └── pagination.errors.ts                # InvalidSortFieldException, InvalidFilterException
+├── interfaces/
+│   └── pagination.interface.ts             # SortField, SortDirection, PageInfo — standalone copies, no pagination-relay import
 ├── dto/
-│   └── cursor-pagination.dto.ts          # CursorPaginationDto — generic query shape, extend per resource
+│   └── cursor-pagination.dto.ts            # CursorPaginationDto — generic query shape, extend per resource
 ├── serializers/
-│   ├── paginated-meta.serializer.ts      # PaginatedMetaSerializer
-│   ├── paginated-links.serializer.ts     # PaginatedLinksSerializer
-│   └── paginated-response.serializer.ts  # PaginatedResponseSerializer<T> — the { data, meta, links } envelope
+│   ├── paginated-meta.serializer.ts        # PaginatedMetaSerializer
+│   ├── paginated-links.serializer.ts       # PaginatedLinksSerializer
+│   └── paginated-response.serializer.ts    # PaginatedResponseSerializer<T> — the { data, meta, links } envelope
 ├── utils/
-│   ├── pagination-links.util.ts          # buildPaginatedLinks()
-│   └── field-selection.util.ts           # applyFieldSelection()
-└── to-paginated-response.util.ts         # toPaginatedResponse() — the one call a controller needs
+│   ├── pagination-links.util.ts            # buildPaginatedLinks()
+│   ├── field-selection.util.ts             # applyFieldSelection()
+│   ├── sort-resolution.util.ts             # resolveSort() / resolveSortField() / resolveSortDirection()
+│   └── filter-sanitizer.util.ts            # sanitizeFilters()
+└── to-paginated-response.util.ts           # toPaginatedResponse() — the one call a controller needs
 
-test/                                      # mirrors src/
+test/                                        # mirrors src/
 ```
 
 Design principles:
@@ -175,9 +192,13 @@ Design principles:
   live separately, decorated with `class-transformer`'s `@Expose()`/`@Type()`
   so they participate correctly in a consuming app's global
   `ClassSerializerInterceptor` — see "Why classes, not interfaces" below.
-- **No database access anywhere in this package.** It only ever reshapes
-  values `pagination-relay` already computed; there's no `mongo/` folder
-  here because there's no query logic to put in one.
+- **No database access anywhere in this package** (no `mongo/` folder) —
+  it reshapes and validates values a caller already has; it never queries
+  anything itself.
+- **`interfaces/pagination.interface.ts` is a standalone copy, not an
+  import, of `@mykks32/pagination-relay`'s shapes of the same name.** This
+  package has zero dependency on any other package here — see "Why this
+  exists as its own package" above.
 - **`data`'s generic type `T` is deliberately not `@Type()`-annotated** —
   class-transformer only needs `@Type()` to know what class to *construct*
   during a plain→class pass; these response classes are only ever built
@@ -217,6 +238,11 @@ If you add a new `@Type()`-decorated class and its test throws
 | `toPaginatedResponse(basePath, query, pageInfo, data, totalCount?)` | function | Assembles the full envelope — the one call most controllers need |
 | `buildPaginatedLinks(basePath, query, pageInfo)` | function | Just the `links` object, for callers assembling the envelope by hand |
 | `applyFieldSelection(item, include?, exclude?)` | function | Sparse fieldset narrowing |
+| `resolveSort(query, allowedFields, defaultField)` | function | Whitelists `sort`/`order` into a `SortField`, throwing `InvalidSortFieldException` otherwise |
+| `resolveSortField(field, allowedFields, defaultField)` / `resolveSortDirection(order)` | functions | The two halves of `resolveSort`, for callers who only need one |
+| `sanitizeFilters(filters, allowedFields)` | function | Whitelists an ad-hoc `filters` object to primitive-only values, throwing `InvalidFilterException` otherwise |
+| `InvalidSortFieldException` / `InvalidFilterException` | classes (error) | Thrown by the two resolvers above; both extend Nest's `BadRequestException` |
+| `SortField` / `SortDirection` / `PageInfo` | types | Standalone copies of `pagination-relay`'s shapes of the same name |
 
 ## Development
 

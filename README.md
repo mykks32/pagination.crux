@@ -6,7 +6,7 @@ consumes all of them side by side:
 | Path | What it is |
 | --- | --- |
 | [`packages/pagination-relay`](packages/pagination-relay) | `@mykks32/pagination-relay` — the cursor (keyset) pagination **engine**: Relay Cursor Connections shape (`edges`/`node`/`cursor` + `pageInfo`). Publishable. |
-| [`packages/pagination-cursor`](packages/pagination-cursor) | `@mykks32/pagination-cursor` — reshapes `pagination-relay`'s output into a flat REST envelope (`{ data, meta, links }`). Depends on `pagination-relay`. Publishable. |
+| [`packages/pagination-cursor`](packages/pagination-cursor) | `@mykks32/pagination-cursor` — a flat REST envelope (`{ data, meta, links }`) for cursor pagination, plus sort/filter query resolution. Self-contained: no dependency on `pagination-relay` or `pagination-offset`. Publishable. |
 | [`packages/pagination-offset`](packages/pagination-offset) | `@mykks32/pagination-offset` — a self-contained, *different* pagination style: classic page/limit, with its own REST envelope. No dependency on the other two. Publishable. |
 | [`apps/notes-api`](apps/notes-api) | A demo NestJS + Mongoose REST API (full Notes CRUD) exposing all three styles side by side, one per API version (`/v1`, `/v2`, `/v3`). |
 
