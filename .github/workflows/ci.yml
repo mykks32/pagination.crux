@@ -20,11 +20,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # Installs the pnpm CLI itself (separate from Node/npm) at the same
-      # major version pinned in package.json's "packageManager" field.
+      # Installs the pnpm CLI itself (separate from Node/npm). No explicit
+      # `version:` here — it's read from package.json's "packageManager"
+      # field; specifying both causes pnpm/action-setup to fail on the
+      # ambiguity (ERR_PNPM_BAD_PM_VERSION).
       - uses: pnpm/action-setup@v4
-        with:
-          version: 9
 
       - uses: actions/setup-node@v4
         with:
