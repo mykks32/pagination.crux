@@ -1,9 +1,9 @@
 /**
  * REST envelope every cursor-paginated list endpoint returns — a flat
  * `data` array (no Relay-style edges/node wrapping) plus `meta` and
- * `links`. This is the shape exposed to API consumers; internally the
- * paginator still works in Relay terms (`@mykks32/pagination-relay`'s
- * `PaginatedResult`), reshaped into this envelope by this package.
+ * `links`. This is the shape exposed to API consumers; this package has no
+ * dependency on `@mykks32/pagination-relay` itself, it just reshapes
+ * whatever `PageInfo`-shaped page info a caller hands to `toPaginatedResponse()`.
  *
  * `data`'s type `T` is generic and left un-`@Type()`-annotated on purpose:
  * class-transformer only needs `@Type()` to know what class to *construct*

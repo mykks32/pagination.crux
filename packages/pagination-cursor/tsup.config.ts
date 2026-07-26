@@ -11,5 +11,5 @@ export default defineConfig({
   treeshake: true,
   // Peer dependencies must stay external — never bundle the packages/
   // libraries a consumer is expected to provide themselves.
-  external: ['@mykks32/pagination-relay', 'class-transformer', 'class-validator'],
+  external: ['class-transformer', 'class-validator'],
 });

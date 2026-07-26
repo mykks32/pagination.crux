@@ -1,7 +1,7 @@
 {
   "name": "@mykks32/pagination-cursor",
   "version": "0.2.0",
-  "description": "Flat REST envelope (data/meta/links) adapter for @mykks32/pagination-relay's cursor pagination",
+  "description": "Flat REST envelope (data/meta/links) for cursor pagination — standalone, no dependency on any other paginator package",
   "author": "Shree Krishna Yadav",
   "license": "MIT",
   "keywords": [
@@ -53,13 +53,13 @@
     "prepublishOnly": "pnpm run clean && pnpm run build"
   },
   "peerDependencies": {
-    "@mykks32/pagination-relay": "workspace:*",
+    "@nestjs/common": "^10.0.0",
     "class-transformer": "^0.5.0",
     "class-validator": "^0.14.0",
     "reflect-metadata": "^0.1.13 || ^0.2.0"
   },
   "devDependencies": {
-    "@mykks32/pagination-relay": "workspace:*",
+    "@nestjs/common": "^10.0.0",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.1",
     "reflect-metadata": "^0.2.2"

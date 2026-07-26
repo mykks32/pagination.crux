@@ -1,6 +1,7 @@
 /** Builds the `self`/`previous`/`next` links for a paginated REST response. */
-import { DEFAULT_PAGE_SIZE, type PageInfo } from '@mykks32/pagination-relay';
+import { DEFAULT_PAGE_SIZE } from '../constants/pagination.constants';
 import type { CursorPaginationDto } from '../dto/cursor-pagination.dto';
+import type { PageInfo } from '../interfaces/pagination.interface';
 import { PaginatedLinksSerializer } from '../serializers/paginated-links.serializer';
 
 /**
