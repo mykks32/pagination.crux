@@ -1,0 +1,62 @@
+{
+  "name": "@mykks32/pagination",
+  "version": "0.1.0",
+  "description": "Pagination package to integrate in NestJs application",
+  "author": "Shree Krishna Yadav",
+  "license": "MIT",
+  "keywords": [
+    "nestjs",
+    "pagination",
+    "cursor-pagination",
+    "keyset-pagination",
+    "mongodb",
+    "mongoose"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@github-personal/mykks32/pagination.crux.git"
+  },
+  "main": "dist/index.js",
+  "module": "dist/index.mjs",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist",
+    "LICENSE"
+  ],
+  "sideEffects": false,
+  "engines": {
+    "node": ">=18"
+  },
+  "packageManager": "pnpm@9.0.0",
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "tsup",
+    "clean": "rm -rf dist",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:cov": "jest --coverage",
+    "lint": "eslint \"{src,test}/**/*.ts\"",
+    "lint:fix": "eslint \"{src,test}/**/*.ts\" --fix",
+    "format": "prettier --write \"{src,test}/**/*.ts\"",
+    "format:check": "prettier --check \"{src,test}/**/*.ts\"",
+    "prepublishOnly": "pnpm run clean && pnpm run build"
+  },
+  "peerDependencies": {
+    "@nestjs/common": "^10.0.0",
+    "mongoose": "^8.0.0"
+  },
+  "devDependencies": {
+    "@nestjs/common": "^10.0.0",
+    "mongoose": "^8.0.0"
+  }
+}

@@ -1,0 +1,31 @@
+{
+  "compilerOptions": {
+    // Language and environment
+    "target": "ES2021",
+    "lib": ["ES2021"],
+    "experimentalDecorators": true, // required for NestJS/TypeORM decorators
+    "emitDecoratorMetadata": true,
+
+    // Modules
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "resolveJsonModule": true,
+    "rootDir": "./src",
+
+    // Emit
+    "outDir": "./dist",
+    "declaration": true, // emit .d.ts files for consumers of the package
+    "declarationMap": true,
+    "sourceMap": true,
+
+    // Type checking
+    "strict": true,
+
+    // Interop constraints
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "skipLibCheck": true
+  },
+  "include": ["src/**/*.ts"],
+  "exclude": ["node_modules", "dist"]
+}
