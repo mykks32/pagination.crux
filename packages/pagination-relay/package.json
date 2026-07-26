@@ -1,7 +1,7 @@
 {
-  "name": "@mykks32/pagination",
-  "version": "0.1.1",
-  "description": "Pagination package to integrate in NestJs application",
+  "name": "@mykks32/pagination-relay",
+  "version": "0.1.0",
+  "description": "Relay Cursor Connections-style pagination for NestJS + Mongoose (edges/node/cursor + pageInfo)",
   "author": "Shree Krishna Yadav",
   "license": "MIT",
   "keywords": [
@@ -9,6 +9,8 @@
     "pagination",
     "cursor-pagination",
     "keyset-pagination",
+    "relay",
+    "graphql-connections",
     "mongodb",
     "mongoose"
   ],

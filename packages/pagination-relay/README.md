@@ -1,12 +1,20 @@
-# @mykks32/pagination
+# @mykks32/pagination-relay
 
-Cursor (keyset/seek) pagination for NestJS applications.
+Relay Cursor Connections-style pagination (`edges`/`node`/`cursor` +
+`pageInfo`) for NestJS + Mongoose. This is the **engine** package in this
+monorepo — it owns the actual seek-filter/cursor-encoding logic that the
+sibling packages build on top of:
 
-Supported:
-- MongoDB / Mongoose (v1)
-- TypeORM (v2, planned)
+| Package | What it adds on top of this one |
+| --- | --- |
+| **`@mykks32/pagination-relay`** (this package) | Nothing — it's the engine. Returns Relay's native `{ edges, pageInfo }` shape. |
+| [`@mykks32/pagination-cursor`](../pagination-cursor) | Reshapes this package's output into a flat REST `{ data, meta, links }` envelope. |
+| [`@mykks32/pagination-offset`](../pagination-offset) | A different, self-contained pagination *style* (page/limit, not cursor-based) — doesn't depend on this package at all. |
 
-See [`apps/notes-api`](../../apps/notes-api) in this monorepo for a full working example (a Notes CRUD API built on top of this package).
+See [`apps/notes-api`](../../apps/notes-api) for all three used side by
+side against the same Mongoose model (`/v1/notes` uses this package
+directly, `/v2/notes` uses `pagination-cursor`, `/v3/notes` uses
+`pagination-offset`).
 
 ## Why cursor pagination
 
@@ -17,6 +25,35 @@ requests. Cursor pagination instead "seeks" from the last row's sort key
 using indexed range queries (`$gt`/`$lt`), so every page is a constant-time
 lookup against the same compound index, and results stay stable under
 concurrent writes.
+
+## Why *Relay's* shape specifically
+
+`edges`/`node`/`cursor` + `pageInfo` is the [GraphQL Cursor Connections
+Specification](https://relay.dev/graphql/connections.htm) — originally a
+GraphQL convention, but the shape itself is transport-agnostic and works
+fine over plain REST too. Reasons to want it verbatim, rather than reshaped:
+
+- **You already have (or plan to add) a GraphQL API.** If any part of your
+  system speaks GraphQL, this shape is the one Relay-compliant clients and
+  tooling already expect — no translation layer needed.
+- **The cursor is meant to be opaque and per-row**, not per-page. `edges[].cursor`
+  ties a cursor to the exact row it came from, which is the more precise
+  primitive `pagination-cursor`'s flatter envelope is itself built on top of.
+
+## When to reach for this vs. the other two packages
+
+- **Pick this package** if you're building (or federating with) GraphQL, or
+  you specifically want the Relay connection shape over REST.
+- **Pick `pagination-cursor`** if you want cursor-based paging (same
+  scalability properties) but a flatter, more REST-conventional response
+  body — most REST clients don't expect `edges`/`node` wrapping.
+- **Pick `pagination-offset`** if your clients need page-number navigation
+  (`page=3`, jump straight to page 8 of 20, "Showing 21–40 of 156") — cursor
+  pagination fundamentally can't do that (there's no such thing as "page 8"
+  when all you have is an opaque cursor), and that trade-off is worth it
+  more often than it seems: admin dashboards, paginated tables with page
+  links, and anything where a user picks a page number rather than clicking
+  "next," all want this instead.
 
 ## Install
 
@@ -33,7 +70,7 @@ requires authentication even for public packages, so consumers need a
 ```
 
 ```bash
-pnpm add @mykks32/pagination
+pnpm add @mykks32/pagination-relay
 ```
 
 `@nestjs/common` and `mongoose` are peer dependencies — install whichever
@@ -80,14 +117,18 @@ Design principles behind the layout:
   `dist/` built straight from `src/`, keeping test files out of `src/`
   means there's nothing to exclude from the build and no risk of a spec
   file ever ending up in the published package.
+- **Stays REST/GraphQL-agnostic on purpose.** This package never builds
+  URLs or an HTTP response envelope — that's exactly the job
+  `pagination-cursor` exists to do. Keeping the split means you can adopt
+  the seek-filter engine without also adopting a REST envelope opinion.
 
-## Usage
+## How to use it
 
 ```ts
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
-import { MongoCursorPaginationService, CursorPaginationArgs } from '@mykks32/pagination';
+import { MongoCursorPaginationService, CursorPaginationArgs } from '@mykks32/pagination-relay';
 import { User } from './user.schema';
 
 @Injectable()
@@ -169,13 +210,13 @@ Published as a dual CJS/ESM package via `tsup`:
 From the monorepo root (`pnpm install` once, workspace-wide), or scoped to this package:
 
 ```bash
-pnpm --filter @mykks32/pagination test        # jest, test/**/*.spec.ts
-pnpm --filter @mykks32/pagination test:cov    # jest with coverage
-pnpm --filter @mykks32/pagination lint        # eslint (flat config, typescript-eslint)
-pnpm --filter @mykks32/pagination lint:fix
-pnpm --filter @mykks32/pagination format      # prettier --write
-pnpm --filter @mykks32/pagination format:check
-pnpm --filter @mykks32/pagination build       # tsup -> dist/
+pnpm --filter @mykks32/pagination-relay test        # jest, test/**/*.spec.ts
+pnpm --filter @mykks32/pagination-relay test:cov    # jest with coverage
+pnpm --filter @mykks32/pagination-relay lint        # eslint (flat config, typescript-eslint)
+pnpm --filter @mykks32/pagination-relay lint:fix
+pnpm --filter @mykks32/pagination-relay format      # prettier --write
+pnpm --filter @mykks32/pagination-relay format:check
+pnpm --filter @mykks32/pagination-relay build       # tsup -> dist/
 ```
 
 Linting and formatting are intentionally separate: ESLint catches
