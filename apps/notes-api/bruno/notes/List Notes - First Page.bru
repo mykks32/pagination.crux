@@ -1,0 +1,25 @@
+meta {
+  name: List Notes - First Page
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{baseUrl}}/notes?first=10&includeTotalCount=true
+  body: none
+  auth: none
+}
+
+params:query {
+  first: 10
+  includeTotalCount: true
+}
+
+script:post-response {
+  // Capture pageInfo cursors so the "Next Page" / "Previous Page" requests
+  // in this collection can chain off this response.
+  if (res.body && res.body.pageInfo) {
+    bru.setVar("endCursor", res.body.pageInfo.endCursor);
+    bru.setVar("startCursor", res.body.pageInfo.startCursor);
+  }
+}

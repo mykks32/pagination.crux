@@ -1,0 +1,15 @@
+meta {
+  name: Get Note By Id
+  type: http
+  seq: 5
+}
+
+get {
+  url: {{baseUrl}}/notes/{{noteId}}
+  body: none
+  auth: none
+}
+
+docs {
+  Uses {{noteId}}, set by "Create Note"'s post-response script.
+}

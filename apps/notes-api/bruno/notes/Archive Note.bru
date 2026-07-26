@@ -1,0 +1,22 @@
+meta {
+  name: Archive Note
+  type: http
+  seq: 7
+}
+
+patch {
+  url: {{baseUrl}}/notes/{{noteId}}
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "archived": true
+  }
+}
+
+docs {
+  Toggling `archived` is done through the same PATCH endpoint as any other
+  field update — there's no separate archive endpoint.
+}

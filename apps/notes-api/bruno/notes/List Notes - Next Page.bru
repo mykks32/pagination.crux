@@ -1,0 +1,28 @@
+meta {
+  name: List Notes - Next Page
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{baseUrl}}/notes?first=10&after={{endCursor}}
+  body: none
+  auth: none
+}
+
+params:query {
+  first: 10
+  after: {{endCursor}}
+}
+
+docs {
+  Run "List Notes - First Page" first — it stores `pageInfo.endCursor` into
+  the {{endCursor}} variable this request pages forward from.
+}
+
+script:post-response {
+  if (res.body && res.body.pageInfo) {
+    bru.setVar("endCursor", res.body.pageInfo.endCursor);
+    bru.setVar("startCursor", res.body.pageInfo.startCursor);
+  }
+}

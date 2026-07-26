@@ -1,0 +1,28 @@
+meta {
+  name: List Notes - Previous Page
+  type: http
+  seq: 4
+}
+
+get {
+  url: {{baseUrl}}/notes?last=10&before={{startCursor}}
+  body: none
+  auth: none
+}
+
+params:query {
+  last: 10
+  before: {{startCursor}}
+}
+
+docs {
+  Backward pagination — pages toward the start of the list using
+  `pageInfo.startCursor` captured from a previous list request.
+}
+
+script:post-response {
+  if (res.body && res.body.pageInfo) {
+    bru.setVar("endCursor", res.body.pageInfo.endCursor);
+    bru.setVar("startCursor", res.body.pageInfo.startCursor);
+  }
+}

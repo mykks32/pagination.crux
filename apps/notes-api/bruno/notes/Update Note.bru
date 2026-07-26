@@ -1,0 +1,18 @@
+meta {
+  name: Update Note
+  type: http
+  seq: 6
+}
+
+patch {
+  url: {{baseUrl}}/notes/{{noteId}}
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "title": "My first note (edited)",
+    "tags": ["personal", "edited"]
+  }
+}

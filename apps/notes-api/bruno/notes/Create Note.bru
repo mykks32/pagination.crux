@@ -1,0 +1,27 @@
+meta {
+  name: Create Note
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{baseUrl}}/notes
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "title": "My first note",
+    "content": "Some content for the note.",
+    "tags": ["personal"]
+  }
+}
+
+script:post-response {
+  // Stash the created id so later requests (Get/Update/Archive/Delete) can
+  // reference it via {{noteId}} without manual copy-pasting.
+  if (res.body && res.body.id) {
+    bru.setVar("noteId", res.body.id);
+  }
+}
