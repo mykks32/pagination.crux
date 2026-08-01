@@ -1,0 +1,31 @@
+$kind: http-request
+name: '8. Update Note'
+method: PATCH
+url: '{{baseUrlV3}}/notes/{{noteId}}'
+headers:
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "title": "My first note (edited)",
+      "tags": [
+        "personal",
+        "edited"
+      ]
+    }
+scripts:
+  - type: beforeRequest
+    language: text/javascript
+    code: |-
+      if (!pm.environment.get('noteId')) {
+          pm.environment.set('noteId', '6a66349095dfff6f321e9827');
+      }
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test('Update Note responds with 200', function () {
+          pm.expect(pm.response.code).to.be.oneOf([200]);
+      });
+examples: ./.resources/8. Update Note.resources/examples
+order: 8000

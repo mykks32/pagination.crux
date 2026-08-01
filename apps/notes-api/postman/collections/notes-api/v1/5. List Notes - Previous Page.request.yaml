@@ -1,0 +1,25 @@
+$kind: http-request
+name: '5. List Notes - Previous Page'
+description: 'Backward pagination — pages toward the start of the list using `pageInfo.startCursor` captured from a previous list request.'
+method: GET
+url: '{{baseUrl}}/notes?last=10&before={{startCursor}}'
+queryParams:
+  - key: last
+    value: '10'
+  - key: before
+    value: '{{startCursor}}'
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      const body = pm.response.json();
+      if (body && body.pageInfo) {
+          pm.environment.set('endCursor', body.pageInfo.endCursor);
+          pm.environment.set('startCursor', body.pageInfo.startCursor);
+      }
+
+      pm.test('List Notes - Previous Page responds with 200', function () {
+          pm.expect(pm.response.code).to.be.oneOf([200]);
+      });
+examples: ./.resources/5. List Notes - Previous Page.resources/examples
+order: 5000

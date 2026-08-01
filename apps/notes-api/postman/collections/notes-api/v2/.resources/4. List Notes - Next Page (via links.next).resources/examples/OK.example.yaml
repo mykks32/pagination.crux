@@ -1,0 +1,39 @@
+$kind: http-example
+request:
+  url: ''
+response:
+  statusCode: 200
+  statusText: 'OK'
+  headers:
+    Content-Type: application/json
+  body:
+    type: text
+    content: |-
+      {
+        "data": [
+          {
+            "id": "64f1a2b3c4d5e6f7a8b9c0d2",
+            "title": "Sample note #12",
+            "content": "Some content for the note.",
+            "tags": [
+              "personal"
+            ],
+            "archived": false,
+            "createdAt": "2026-07-28T14:32:10.123Z",
+            "updatedAt": "2026-07-28T14:32:10.123Z"
+          }
+        ],
+        "meta": {
+          "count": 42,
+          "hasNextPage": true,
+          "hasPreviousPage": true,
+          "startCursor": "eyJjcmVhdGVkQXQiOiIyMDI2LTA3LTMwVDA5OjE1OjQyLjk4N1oifQ==",
+          "endCursor": "eyJjcmVhdGVkQXQiOiIyMDI2LTA3LTMwVDA5OjE1OjQyLjk4N1oifQ=="
+        },
+        "links": {
+          "self": "/v2/notes?first=10&after=eyJjcmVhdGVkQXQiOiIyMDI2LTA3LTI4VDE0OjMyOjEwLjEyM1oifQ==",
+          "previous": "/v2/notes?first=10&before=eyJjcmVhdGVkQXQiOiIyMDI2LTA3LTMwVDA5OjE1OjQyLjk4N1oifQ==",
+          "next": "/v2/notes?first=10&after=eyJjcmVhdGVkQXQiOiIyMDI2LTA3LTMwVDA5OjE1OjQyLjk4N1oifQ=="
+        }
+      }
+order: 1000

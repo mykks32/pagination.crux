@@ -1,0 +1,48 @@
+name: Sync Postman workspace
+
+# Pushes apps/notes-api/postman/ (collections + environments) to a Postman
+# Cloud workspace via the Postman CLI, driven by apps/notes-api/.postman/resources.yaml.
+# Manual only — the collection is a demo/reference artifact, not something that
+# needs to sync on every push.
+on:
+  workflow_dispatch:
+    inputs:
+      force_sync:
+        description: 'Delete cloud collections/environments not present locally (postman workspace push --push-strategy force-sync). Leave unchecked for a safe create/update-only push.'
+        type: boolean
+        default: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: apps/notes-api
+
+    steps:
+      # 1. Checkout (pulls postman/ and .postman/resources.yaml onto the runner)
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      # 2. Install Postman CLI (tool that reads resources.yaml and pushes the workspace)
+      - name: Install Postman CLI
+        run: curl -o- "https://dl-cli.pstmn.io/install/unix.sh" | sh
+
+      # 3. Authenticate to Postman (non-interactive login via API key secret)
+      - name: Login to Postman
+        run: postman login --with-api-key "${{ secrets.POSTMAN_API_KEY }}"
+
+      # 4. Push workspace (create/update only unless force_sync is checked)
+      - name: Push workspace to Postman Cloud
+        run: |
+          if [ "${{ inputs.force_sync }}" = "true" ]; then
+            postman workspace push --push-strategy force-sync --yes --verbose
+          else
+            postman workspace push --yes --verbose
+          fi
+
+      # 5. Logout (always runs, even if the push step above fails)
+      - name: Logout from Postman
+        if: always()
+        run: postman logout

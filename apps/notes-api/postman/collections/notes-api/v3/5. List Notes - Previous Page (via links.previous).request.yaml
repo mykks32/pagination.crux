@@ -1,0 +1,14 @@
+$kind: http-request
+name: '5. List Notes - Previous Page (via links.previous)'
+description: 'Run "4. List Notes - Page 2" first — it captures `links.previous` into {{v3PreviousLink}}. `null` (request fails) if already on page 1.'
+method: GET
+url: '{{host}}{{v3PreviousLink}}'
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test('List Notes - Previous Page responds with 200', function () {
+          pm.expect(pm.response.code).to.be.oneOf([200]);
+      });
+examples: ./.resources/5. List Notes - Previous Page (via links.previous).resources/examples
+order: 5000

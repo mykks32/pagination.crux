@@ -1,0 +1,31 @@
+$kind: http-request
+name: '1. Create Note'
+description: 'Stashes the created id as {{noteId}} so later requests (Get/Update/Archive/Delete) can reference it. Notes are shared across all three API versions — this var is reused by v2/v3 folders too.'
+method: POST
+url: '{{baseUrl}}/notes'
+headers:
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "title": "My first note",
+      "content": "Some content for the note.",
+      "tags": [
+        "personal"
+      ]
+    }
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      const body = pm.response.json();
+      if (body && body.id) {
+          pm.environment.set('noteId', body.id);
+      }
+
+      pm.test('Create Note responds with 201', function () {
+          pm.expect(pm.response.code).to.be.oneOf([201]);
+      });
+examples: ./.resources/1. Create Note.resources/examples
+order: 1000

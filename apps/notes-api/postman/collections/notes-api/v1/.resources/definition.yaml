@@ -1,0 +1,13 @@
+$kind: folder
+name: 'v1'
+description: 'Relay Cursor Connections shape — `{ edges: [{ node, cursor }], pageInfo }`.'
+order:
+  - '1. Create Note'
+  - '2. List Notes - Basic'
+  - '3. List Notes - All Fields'
+  - '4. List Notes - Next Page'
+  - '5. List Notes - Previous Page'
+  - '6. Get Note By Id'
+  - '7. Update Note'
+  - '8. Archive Note'
+  - '9. Delete Note'

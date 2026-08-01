@@ -1,0 +1,12 @@
+# Use this workspace to collaborate.
+# Replace this with the id of a real Postman Cloud workspace before running
+# the "Sync Postman workspace" GitHub Action (postman workspace push reads it).
+workspace:
+  id: REPLACE_WITH_POSTMAN_WORKSPACE_ID
+
+# All resources under postman/ (collections/, environments/) are automatically
+# registered. Point to additional files outside postman/ to register them
+# individually, e.g.:
+#localResources:
+#  collections:
+#    - ../some/other/collection/

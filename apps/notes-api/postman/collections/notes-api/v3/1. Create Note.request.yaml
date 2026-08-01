@@ -1,0 +1,30 @@
+$kind: http-request
+name: '1. Create Note'
+method: POST
+url: '{{baseUrlV3}}/notes'
+headers:
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "title": "My first note",
+      "content": "Some content for the note.",
+      "tags": [
+        "personal"
+      ]
+    }
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      const body = pm.response.json();
+      if (body && body.id) {
+          pm.environment.set('noteId', body.id);
+      }
+
+      pm.test('Create Note responds with 201', function () {
+          pm.expect(pm.response.code).to.be.oneOf([201]);
+      });
+examples: ./.resources/1. Create Note.resources/examples
+order: 1000

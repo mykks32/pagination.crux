@@ -1,0 +1,13 @@
+$kind: folder
+name: 'v2'
+description: 'Same cursor pagination as v1, reshaped into a flat REST envelope: `{ data, meta, links }`.'
+order:
+  - '1. Create Note'
+  - '2. List Notes - Basic'
+  - '3. List Notes - All Fields'
+  - '4. List Notes - Next Page (via links.next)'
+  - '5. List Notes - Previous Page (via links.previous)'
+  - '6. Get Note By Id'
+  - '7. Update Note'
+  - '8. Archive Note'
+  - '9. Delete Note'

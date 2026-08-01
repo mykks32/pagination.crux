@@ -1,0 +1,7 @@
+$kind: collection
+name: 'notes-api'
+description: 'Demo NestJS + Mongoose REST API showing full Notes CRUD across three pagination styles: relay (v1), cursor-REST (v2), offset (v3). Converted from apps/notes-api/bruno.'
+order:
+  - 'v1'
+  - 'v2'
+  - 'v3'

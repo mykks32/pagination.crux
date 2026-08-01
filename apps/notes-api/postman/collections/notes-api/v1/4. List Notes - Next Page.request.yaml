@@ -1,0 +1,25 @@
+$kind: http-request
+name: '4. List Notes - Next Page'
+description: 'Run "2. List Notes - Basic" first — it stores `pageInfo.endCursor` into {{endCursor}} to page forward from.'
+method: GET
+url: '{{baseUrl}}/notes?first=10&after={{endCursor}}'
+queryParams:
+  - key: first
+    value: '10'
+  - key: after
+    value: '{{endCursor}}'
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      const body = pm.response.json();
+      if (body && body.pageInfo) {
+          pm.environment.set('endCursor', body.pageInfo.endCursor);
+          pm.environment.set('startCursor', body.pageInfo.startCursor);
+      }
+
+      pm.test('List Notes - Next Page responds with 200', function () {
+          pm.expect(pm.response.code).to.be.oneOf([200]);
+      });
+examples: ./.resources/4. List Notes - Next Page.resources/examples
+order: 4000

@@ -1,0 +1,40 @@
+$kind: http-example
+request:
+  url: ''
+response:
+  statusCode: 200
+  statusText: 'OK'
+  headers:
+    Content-Type: application/json
+  body:
+    type: text
+    content: |-
+      {
+        "data": [
+          {
+            "id": "64f1a2b3c4d5e6f7a8b9c0d1",
+            "title": "My first note",
+            "tags": [
+              "personal"
+            ],
+            "archived": false
+          }
+        ],
+        "meta": {
+          "page": 1,
+          "limit": 5,
+          "count": 5,
+          "totalItems": 42,
+          "totalPages": 9,
+          "hasPreviousPage": false,
+          "hasNextPage": true
+        },
+        "links": {
+          "self": "/v3/notes?page=1&limit=5&search=note",
+          "first": "/v3/notes?page=1&limit=5&search=note",
+          "previous": null,
+          "next": "/v3/notes?page=2&limit=5&search=note",
+          "last": "/v3/notes?page=9&limit=5&search=note"
+        }
+      }
+order: 1000

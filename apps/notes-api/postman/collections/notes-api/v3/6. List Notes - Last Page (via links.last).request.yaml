@@ -1,0 +1,14 @@
+$kind: http-request
+name: '6. List Notes - Last Page (via links.last)'
+description: 'Run "2. List Notes - Basic (Page 1)" first — it captures `links.last` (resolved to the actual final page) into {{v3LastLink}}.'
+method: GET
+url: '{{host}}{{v3LastLink}}'
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test('List Notes - Last Page responds with 200', function () {
+          pm.expect(pm.response.code).to.be.oneOf([200]);
+      });
+examples: ./.resources/6. List Notes - Last Page (via links.last).resources/examples
+order: 6000

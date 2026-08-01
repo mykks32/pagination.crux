@@ -1,0 +1,31 @@
+$kind: http-request
+name: '3. List Notes - All Fields'
+description: 'Every field ListNotesQueryDto supports in one request. `include` is accepted but has no visible effect in v1 — only v2/v3 apply field selection to their output.'
+method: GET
+url: '{{baseUrl}}/notes?first=5&search=note&sort=title&order=asc&include=title,tags,archived&filters=%7B%22tags%22%3A%22personal%22%7D&includeArchived=true&includeTotalCount=true'
+queryParams:
+  - key: first
+    value: '5'
+  - key: search
+    value: 'note'
+  - key: sort
+    value: 'title'
+  - key: order
+    value: 'asc'
+  - key: include
+    value: 'title,tags,archived'
+  - key: filters
+    value: '{"tags":"personal"}'
+  - key: includeArchived
+    value: 'true'
+  - key: includeTotalCount
+    value: 'true'
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test('List Notes - All Fields responds with 200', function () {
+          pm.expect(pm.response.code).to.be.oneOf([200]);
+      });
+examples: ./.resources/3. List Notes - All Fields.resources/examples
+order: 3000

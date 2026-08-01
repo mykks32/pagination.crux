@@ -1,0 +1,20 @@
+$kind: http-request
+name: '4. List Notes - Next Page (via links.next)'
+description: 'Run "2. List Notes - Basic" first — it captures `links.next` (a ready-to-use next-page URL) into {{v2NextLink}}.'
+method: GET
+url: '{{host}}{{v2NextLink}}'
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      const body = pm.response.json();
+      if (body && body.links) {
+          pm.environment.set('v2NextLink', body.links.next);
+          pm.environment.set('v2PreviousLink', body.links.previous);
+      }
+
+      pm.test('List Notes - Next Page responds with 200', function () {
+          pm.expect(pm.response.code).to.be.oneOf([200]);
+      });
+examples: ./.resources/4. List Notes - Next Page (via links.next).resources/examples
+order: 4000

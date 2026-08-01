@@ -1,0 +1,23 @@
+$kind: http-example
+request:
+  url: ''
+response:
+  statusCode: 200
+  statusText: 'OK'
+  headers:
+    Content-Type: application/json
+  body:
+    type: text
+    content: |-
+      {
+        "id": "64f1a2b3c4d5e6f7a8b9c0d1",
+        "title": "My first note",
+        "content": "Some content for the note.",
+        "tags": [
+          "personal"
+        ],
+        "archived": false,
+        "createdAt": "2026-07-28T14:32:10.123Z",
+        "updatedAt": "2026-07-28T14:32:10.123Z"
+      }
+order: 1000

@@ -1,0 +1,18 @@
+$kind: http-request
+name: '10. Delete Note'
+method: DELETE
+url: '{{baseUrlV3}}/notes/{{noteId}}'
+scripts:
+  - type: beforeRequest
+    language: text/javascript
+    code: |-
+      if (!pm.environment.get('noteId')) {
+          pm.environment.set('noteId', '6a66349095dfff6f321e9827');
+      }
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test('Delete Note responds with 204', function () {
+          pm.expect(pm.response.code).to.be.oneOf([204]);
+      });
+order: 10000

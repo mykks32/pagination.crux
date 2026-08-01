@@ -1,0 +1,25 @@
+$kind: http-request
+name: '4. List Notes - Page 2'
+description: 'Jump directly to any page by number — the one thing no cursor-based approach (v1/v2) can do.'
+method: GET
+url: '{{baseUrlV3}}/notes?page=2&limit=10'
+queryParams:
+  - key: page
+    value: '2'
+  - key: limit
+    value: '10'
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      const body = pm.response.json();
+      if (body && body.links) {
+          pm.environment.set('v3PreviousLink', body.links.previous);
+          pm.environment.set('v3LastLink', body.links.last);
+      }
+
+      pm.test('List Notes - Page 2 responds with 200', function () {
+          pm.expect(pm.response.code).to.be.oneOf([200]);
+      });
+examples: ./.resources/4. List Notes - Page 2.resources/examples
+order: 4000

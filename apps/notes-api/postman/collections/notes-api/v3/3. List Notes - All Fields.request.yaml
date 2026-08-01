@@ -1,0 +1,31 @@
+$kind: http-request
+name: '3. List Notes - All Fields'
+description: 'No `includeTotalCount` toggle here (unlike v1/v2) — offset pagination always computes `meta.totalItems`/`totalPages`, since `links.last` depends on knowing the total up front.'
+method: GET
+url: '{{baseUrlV3}}/notes?page=1&limit=5&search=note&sort=title&order=asc&include=title,tags,archived&filters=%7B%22tags%22%3A%22personal%22%7D&includeArchived=true'
+queryParams:
+  - key: page
+    value: '1'
+  - key: limit
+    value: '5'
+  - key: search
+    value: 'note'
+  - key: sort
+    value: 'title'
+  - key: order
+    value: 'asc'
+  - key: include
+    value: 'title,tags,archived'
+  - key: filters
+    value: '{"tags":"personal"}'
+  - key: includeArchived
+    value: 'true'
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test('List Notes - All Fields responds with 200', function () {
+          pm.expect(pm.response.code).to.be.oneOf([200]);
+      });
+examples: ./.resources/3. List Notes - All Fields.resources/examples
+order: 3000

@@ -1,0 +1,14 @@
+$kind: folder
+name: 'v3'
+description: 'Classic page/limit pagination via @mykks32/pagination-offset.'
+order:
+  - '1. Create Note'
+  - '2. List Notes - Basic (Page 1)'
+  - '3. List Notes - All Fields'
+  - '4. List Notes - Page 2'
+  - '5. List Notes - Previous Page (via links.previous)'
+  - '6. List Notes - Last Page (via links.last)'
+  - '7. Get Note By Id'
+  - '8. Update Note'
+  - '9. Archive Note'
+  - '10. Delete Note'

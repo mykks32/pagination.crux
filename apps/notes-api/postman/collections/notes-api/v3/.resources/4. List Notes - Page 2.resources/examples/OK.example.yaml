@@ -1,0 +1,43 @@
+$kind: http-example
+request:
+  url: ''
+response:
+  statusCode: 200
+  statusText: 'OK'
+  headers:
+    Content-Type: application/json
+  body:
+    type: text
+    content: |-
+      {
+        "data": [
+          {
+            "id": "64f1a2b3c4d5e6f7a8b9c0d2",
+            "title": "Sample note #12",
+            "content": "Some content for the note.",
+            "tags": [
+              "personal"
+            ],
+            "archived": false,
+            "createdAt": "2026-07-28T14:32:10.123Z",
+            "updatedAt": "2026-07-28T14:32:10.123Z"
+          }
+        ],
+        "meta": {
+          "page": 2,
+          "limit": 10,
+          "count": 10,
+          "totalItems": 42,
+          "totalPages": 5,
+          "hasPreviousPage": true,
+          "hasNextPage": true
+        },
+        "links": {
+          "self": "/v3/notes?page=2&limit=10",
+          "first": "/v3/notes?page=1&limit=10",
+          "previous": "/v3/notes?page=1&limit=10",
+          "next": "/v3/notes?page=3&limit=10",
+          "last": "/v3/notes?page=5&limit=10"
+        }
+      }
+order: 1000

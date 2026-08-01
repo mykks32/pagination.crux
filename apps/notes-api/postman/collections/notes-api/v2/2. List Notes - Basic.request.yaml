@@ -1,0 +1,25 @@
+$kind: http-request
+name: '2. List Notes - Basic'
+description: 'Same cursor pagination as v1, reshaped into a flat REST envelope by @mykks32/pagination-cursor: `{ data, meta, links }` — no `edges`/`node` wrapping.'
+method: GET
+url: '{{baseUrlV2}}/notes?first=10&includeTotalCount=true'
+queryParams:
+  - key: first
+    value: '10'
+  - key: includeTotalCount
+    value: 'true'
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      const body = pm.response.json();
+      if (body && body.links) {
+          pm.environment.set('v2NextLink', body.links.next);
+          pm.environment.set('v2PreviousLink', body.links.previous);
+      }
+
+      pm.test('List Notes - Basic responds with 200', function () {
+          pm.expect(pm.response.code).to.be.oneOf([200]);
+      });
+examples: ./.resources/2. List Notes - Basic.resources/examples
+order: 2000
