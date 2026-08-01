@@ -1,9 +1,11 @@
 $kind: http-request
-name: '8. Archive Note'
+name: 8. Archive Note
 method: PATCH
-url: '{{baseUrlV2}}/notes/{{noteId}}'
+url: "{{baseUrlV2}}/notes/:noteId"
 headers:
   Content-Type: application/json
+pathVariables:
+  noteId: 6a6e37606415965f6fef9f27
 body:
   type: json
   content: |-
@@ -12,16 +14,16 @@ body:
     }
 scripts:
   - type: beforeRequest
-    language: text/javascript
     code: |-
       if (!pm.environment.get('noteId')) {
           pm.environment.set('noteId', '6a66349095dfff6f321e9827');
       }
-  - type: afterResponse
     language: text/javascript
+  - type: afterResponse
     code: |-
       pm.test('Archive Note responds with 200', function () {
           pm.expect(pm.response.code).to.be.oneOf([200]);
       });
+    language: text/javascript
 examples: ./.resources/8. Archive Note.resources/examples
 order: 8000
