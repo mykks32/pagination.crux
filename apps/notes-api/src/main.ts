@@ -1,10 +1,12 @@
 /** Application entry point: bootstraps Nest, wires global pipes/versioning, and starts listening. */
 import 'reflect-metadata';
-import { ClassSerializerInterceptor, ValidationPipe, VersioningType } from '@nestjs/common';
+import { ClassSerializerInterceptor, Logger, ValidationPipe, VersioningType } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { NestFactory, Reflector } from '@nestjs/core';
 import { AppModule } from './app.module';
 import type { AppConfig } from './config/configuration';
+
+const logger = new Logger("Bootstrap")
 
 async function bootstrap(): Promise<void> {
   const app = await NestFactory.create(AppModule);
@@ -41,7 +43,7 @@ async function bootstrap(): Promise<void> {
 
   await app.listen(port);
 
-  console.log(`notes-api listening on http://localhost:${port}/v1`);
+  logger.log(`notes-api listening on http://localhost:${port}/v1`);
 }
 
 void bootstrap();
