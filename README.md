@@ -43,8 +43,10 @@ Each project also has its own README with details specific to it:
 - [apps/notes-api/README.md](apps/notes-api/README.md) — running the demo app, all three API versions, seeding, Docker
 
 See also [CONTRIBUTING.md](CONTRIBUTING.md) for one non-obvious gotcha:
-a few imports in `apps/notes-api` must stay real (non-type-only) imports
-for NestJS DI to work — don't let an automated `lint:fix` "clean" them.
+`apps/notes-api` disables `@typescript-eslint/consistent-type-imports`
+because NestJS DI/`@Body()`/`@Query()` need certain imports to stay real
+(non-type-only) at runtime — don't re-enable the rule there without
+reading why first.
 
 ## Repo layout
 
