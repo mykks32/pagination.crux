@@ -1,23 +1,43 @@
 {
   "compilerOptions": {
+    // Language and environment
+    // Syntax level to compile down to
     "target": "ES2021",
+    // Matching runtime type definitions (no DOM — this only ever runs in Node)
     "lib": ["ES2021"],
+    // Required for NestJS decorators
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
 
-    "module": "commonjs",
-    "moduleResolution": "node",
+    // Modules
+    // No "type": "module" in package.json, so this compiles to CommonJS
+    "module": "node16",
+    // tsc is the actual build (dist/main.js is run directly with `node`), so resolve like Node itself does
+    "moduleResolution": "node16",
+    // node16 emits per-file CJS/ESM based on file extension; ts-jest requires this to compile file-by-file
+    "isolatedModules": true,
+    // Allow importing .json files with inferred types
     "resolveJsonModule": true,
+    // Anchors emitted output paths to src/, keeping dist/ free of the src/ prefix
     "rootDir": "./src",
 
+    // Emit
     "outDir": "./dist",
+    // Map compiled output back to source for debugging
     "sourceMap": true,
 
+    // Type checking
+    // Full strict-mode checks (noImplicitAny, strictNullChecks, etc.)
     "strict": true,
+    // NestJS/Mongoose classes rely on DI and decorators to populate properties, not constructor assignment
     "strictPropertyInitialization": false,
 
+    // Interop constraints
+    // Allow default-importing CJS modules that don't use ES module syntax
     "esModuleInterop": true,
+    // Catch import path casing mismatches (macOS/Windows are case-insensitive, Linux CI isn't)
     "forceConsistentCasingInFileNames": true,
+    // Don't type-check .d.ts files in node_modules — trust published types, keep builds fast
     "skipLibCheck": true
   },
   "include": ["src/**/*.ts"],

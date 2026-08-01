@@ -1,29 +1,43 @@
 {
   "compilerOptions": {
     // Language and environment
+    // Syntax level to compile down to
     "target": "ES2021",
+    // Matching runtime type definitions (no DOM — this only ever runs in Node)
     "lib": ["ES2021"],
-    "experimentalDecorators": true, // required for NestJS/TypeORM decorators
+    // Required for NestJS/TypeORM decorators
+    "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
 
     // Modules
-    "module": "commonjs",
-    "moduleResolution": "node",
+    // Keep import/export syntax as-authored; tsup/esbuild does the actual CJS+ESM emit
+    "module": "preserve",
+    // Resolve like the bundler that really builds this package (tsup/esbuild), not Node's runtime resolver
+    "moduleResolution": "bundler",
+    // Allow importing .json files with inferred types
     "resolveJsonModule": true,
+    // Anchors emitted output paths to src/, keeping dist/ free of the src/ prefix
     "rootDir": "./src",
 
     // Emit
     "outDir": "./dist",
-    "declaration": true, // emit .d.ts files for consumers of the package
+    // Emit .d.ts files for consumers of the package
+    "declaration": true,
+    // Let consumers' editors jump from .d.ts back to the original .ts source
     "declarationMap": true,
+    // Map compiled output back to source for debugging
     "sourceMap": true,
 
     // Type checking
+    // Full strict-mode checks (noImplicitAny, strictNullChecks, etc.)
     "strict": true,
 
     // Interop constraints
+    // Allow default-importing CJS modules that don't use ES module syntax
     "esModuleInterop": true,
+    // Catch import path casing mismatches (macOS/Windows are case-insensitive, Linux CI isn't)
     "forceConsistentCasingInFileNames": true,
+    // Don't type-check .d.ts files in node_modules — trust published types, keep builds fast
     "skipLibCheck": true
   },
   "include": ["src/**/*.ts"],
