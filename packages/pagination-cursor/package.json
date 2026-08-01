@@ -1,6 +1,6 @@
 {
   "name": "@mykks32/pagination-cursor",
-  "version": "0.3.1",
+  "version": "0.3.2",
   "description": "Flat REST envelope (data/meta/links) for cursor pagination — standalone, no dependency on any other paginator package",
   "author": "Shree Krishna Yadav",
   "license": "MIT",
