@@ -1,6 +1,6 @@
 {
   "name": "@mykks32/pagination-relay",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "Relay Cursor Connections-style pagination for NestJS + Mongoose (edges/node/cursor + pageInfo)",
   "author": "Shree Krishna Yadav",
   "license": "MIT",

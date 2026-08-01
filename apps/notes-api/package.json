@@ -1,6 +1,6 @@
 {
   "name": "notes-api",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "private": true,
   "description": "Demo NestJS + Mongoose REST API showing full Notes CRUD across three pagination styles: relay (v1), cursor-REST (v2), offset (v3)",
   "author": "Shree Krishna Yadav",
