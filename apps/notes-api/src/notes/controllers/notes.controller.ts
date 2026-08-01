@@ -15,24 +15,16 @@
  */
 import { Body, Controller, Delete, Get, HttpCode, HttpStatus, Param, Patch, Post, Query, Version } from '@nestjs/common';
 import type { Edge, PaginatedResult } from '@mykks32/pagination-relay';
-// applyFieldSelection/toPaginatedResponse must stay real (non-type-only)
-// imports — they're called as functions below, not just referenced as types.
 import { applyFieldSelection, toPaginatedResponse } from '@mykks32/pagination-cursor';
 import type { PaginatedResponseSerializer } from '@mykks32/pagination-cursor';
 import { toOffsetPaginatedResponse } from '@mykks32/pagination-offset';
 import type { OffsetPaginatedResponseSerializer } from '@mykks32/pagination-offset';
 import { response } from '../../common/serializers/response.serializer';
-// Keep these as real imports: @Body()/@Query() param types and the DI token below both need the actual class at runtime (see CONTRIBUTING.md).
-// eslint-disable-next-line @typescript-eslint/consistent-type-imports
 import { CreateNoteDto } from '../dto/create-note.dto';
-// eslint-disable-next-line @typescript-eslint/consistent-type-imports
 import { ListNotesOffsetQueryDto } from '../dto/list-notes-offset-query.dto';
-// eslint-disable-next-line @typescript-eslint/consistent-type-imports
 import { ListNotesQueryDto } from '../dto/list-notes-query.dto';
 import { NoteSerializer } from '../serializers/note.serializer';
-// eslint-disable-next-line @typescript-eslint/consistent-type-imports
 import { UpdateNoteDto } from '../dto/update-note.dto';
-// eslint-disable-next-line @typescript-eslint/consistent-type-imports
 import { NotesService } from '../services/notes.service';
 import type { NoteDocument } from '../schemas/note.schema';
 

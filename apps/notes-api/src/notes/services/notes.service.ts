@@ -15,18 +15,14 @@
  */
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-// Keep as real imports: implicit constructor-injected DI tokens, needed at runtime (see CONTRIBUTING.md).
 // Both packages export a class named MongoCursorPaginationService — aliased so v1 (relay) and v2 (cursor) inject distinct, unrelated engines.
-// eslint-disable-next-line @typescript-eslint/consistent-type-imports
 import { MongoCursorPaginationService as RelayMongoCursorPaginationService, type PaginatedResult } from '@mykks32/pagination-relay';
-// eslint-disable-next-line @typescript-eslint/consistent-type-imports
 import {
   MongoCursorPaginationService as CursorMongoCursorPaginationService,
   resolveSort,
   sanitizeFilters,
   type CursorPage,
 } from '@mykks32/pagination-cursor';
-// eslint-disable-next-line @typescript-eslint/consistent-type-imports
 import { MongoOffsetPaginationService, type OffsetPage } from '@mykks32/pagination-offset';
 import type { FilterQuery, Model } from 'mongoose';
 import { Types } from 'mongoose';
