@@ -1,7 +1,7 @@
 // Public API barrel.
 export * from './dto/cursor-pagination.dto';
-export * from './interfaces/pagination.interface';
-export * from './interfaces/mongo-cursor-pagination-options.interface';
+export type * from './interfaces/pagination.interface';
+export type * from './interfaces/mongo-cursor-pagination-options.interface';
 export * from './serializers/paginated-meta.serializer';
 export * from './serializers/paginated-links.serializer';
 export * from './serializers/paginated-response.serializer';

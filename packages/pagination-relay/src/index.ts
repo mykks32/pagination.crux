@@ -1,8 +1,8 @@
 // Public API barrel — every consumer-facing export re-exported from a
 // single entry point, grouped in the same order as the `src/` layout
 // documented in the README.
-export * from './interfaces/pagination.interface';
-export * from './interfaces/mongo-cursor-pagination-options.interface';
+export type * from './interfaces/pagination.interface';
+export type * from './interfaces/mongo-cursor-pagination-options.interface';
 
 export * from './constants/pagination.constants';
 

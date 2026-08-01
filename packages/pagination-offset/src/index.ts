@@ -1,7 +1,7 @@
 // Public API barrel — every consumer-facing export re-exported from a
 // single entry point.
-export * from './interfaces/pagination.interface';
-export * from './interfaces/mongo-offset-pagination-options.interface';
+export type * from './interfaces/pagination.interface';
+export type * from './interfaces/mongo-offset-pagination-options.interface';
 
 export * from './constants/pagination.constants';
 
