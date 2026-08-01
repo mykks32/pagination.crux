@@ -1,35 +1,24 @@
-name: Local
+name: notes-api
 values:
   - key: host
     value: 'http://localhost:3000'
-    enabled: true
   - key: baseUrl
     value: 'http://localhost:3000/v1'
-    enabled: true
   - key: baseUrlV2
     value: 'http://localhost:3000/v2'
-    enabled: true
   - key: baseUrlV3
     value: 'http://localhost:3000/v3'
-    enabled: true
   - key: noteId
     value: ''
-    enabled: true
   - key: endCursor
     value: ''
-    enabled: true
   - key: startCursor
     value: ''
-    enabled: true
   - key: v2NextLink
     value: ''
-    enabled: true
   - key: v2PreviousLink
     value: ''
-    enabled: true
   - key: v3PreviousLink
     value: ''
-    enabled: true
   - key: v3LastLink
     value: ''
-    enabled: true
