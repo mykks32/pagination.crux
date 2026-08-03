@@ -70,7 +70,7 @@ export function decodeCursor(cursor: string): CursorPayload {
     const json = Buffer.from(cursor, 'base64url').toString('utf8');
     // The reviver rehydrates any tagged Date objects back into real Dates
     // as JSON.parse walks the tree, mirroring the encode step above.
-    const payload = JSON.parse(json, (_key, value) => (isSerializedDate(value) ? new Date(value.iso) : value)) as unknown;
+    const payload = JSON.parse(json, (_key, value: unknown) => (isSerializedDate(value) ? new Date(value.iso) : value)) as unknown;
 
     // Shape-check before trusting the payload — this is the boundary where
     // arbitrary client-supplied strings enter the system.

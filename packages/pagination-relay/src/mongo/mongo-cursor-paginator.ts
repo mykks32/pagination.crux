@@ -78,16 +78,16 @@ function parseArgs(args: CursorPaginationArgs): ParsedArgs {
   // Forward (first/after) and backward (last/before) arguments are mutually
   // exclusive — mixing them would make "which direction, how many" ambiguous.
   if (first !== undefined && last !== undefined) {
-    throw new InvalidPaginationArgsException('Provide either "first" or "last", not both.');
+    throw new InvalidPaginationArgsException('Provide either "first" or "last", not both.', { first, last });
   }
   if (after !== undefined && before !== undefined) {
-    throw new InvalidPaginationArgsException('Provide either "after" or "before", not both.');
+    throw new InvalidPaginationArgsException('Provide either "after" or "before", not both.', { after, before });
   }
   if (last !== undefined && after !== undefined) {
-    throw new InvalidPaginationArgsException('"last" cannot be combined with "after".');
+    throw new InvalidPaginationArgsException('"last" cannot be combined with "after".', { last, after });
   }
   if (first !== undefined && before !== undefined) {
-    throw new InvalidPaginationArgsException('"first" cannot be combined with "before".');
+    throw new InvalidPaginationArgsException('"first" cannot be combined with "before".', { first, before });
   }
 
   const isBackward = last !== undefined || before !== undefined;
@@ -103,7 +103,7 @@ function parseArgs(args: CursorPaginationArgs): ParsedArgs {
 function clampLimit(rawLimit: number | undefined): number {
   const limit = rawLimit ?? DEFAULT_PAGE_SIZE;
   if (!Number.isInteger(limit) || limit <= 0) {
-    throw new InvalidPaginationArgsException('"first"/"last" must be a positive integer.');
+    throw new InvalidPaginationArgsException('"first"/"last" must be a positive integer.', { limit: rawLimit });
   }
   return Math.min(limit, MAX_PAGE_SIZE);
 }

@@ -10,7 +10,11 @@ import { PaginatedLinksSerializer } from '../serializers/paginated-links.seriali
  * generated link so filters/sort/search/fieldset selection survive paging.
  */
 function sharedParams(query: CursorPaginationDto): Record<string, unknown> {
-  const { first: _first, last: _last, after: _after, before: _before, ...rest } = query;
+  const rest: Record<string, unknown> = { ...query };
+  delete rest.first;
+  delete rest.last;
+  delete rest.after;
+  delete rest.before;
   return rest;
 }
 
@@ -23,7 +27,11 @@ function stringify(params: Record<string, unknown>): Record<string, string> {
       if (value.length > 0) out[key] = value.join(',');
       continue;
     }
-    out[key] = typeof value === 'object' ? JSON.stringify(value) : String(value);
+    if (typeof value === 'number' || typeof value === 'boolean' || typeof value === 'string') {
+      out[key] = String(value);
+      continue;
+    }
+    out[key] = JSON.stringify(value);
   }
   return out;
 }

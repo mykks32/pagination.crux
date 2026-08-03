@@ -5,7 +5,8 @@ import type { OffsetPageMetaSerializer } from '../serializers/offset-page-meta.s
 
 /** Everything from the incoming query except `page` — carried over unchanged onto every generated link. */
 function sharedParams(query: OffsetPaginationDto): Record<string, unknown> {
-  const { page: _page, ...rest } = query;
+  const rest: Record<string, unknown> = { ...query };
+  delete rest.page;
   return rest;
 }
 
@@ -18,7 +19,11 @@ function stringify(params: Record<string, unknown>): Record<string, string> {
       if (value.length > 0) out[key] = value.join(',');
       continue;
     }
-    out[key] = typeof value === 'object' ? JSON.stringify(value) : String(value);
+    if (typeof value === 'number' || typeof value === 'boolean' || typeof value === 'string') {
+      out[key] = String(value);
+      continue;
+    }
+    out[key] = JSON.stringify(value);
   }
   return out;
 }

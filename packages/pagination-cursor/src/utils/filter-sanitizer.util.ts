@@ -25,10 +25,13 @@ export function sanitizeFilters<TField extends string>(
   const sanitized: Partial<Record<TField, unknown>> = {};
   for (const [field, value] of Object.entries(filters)) {
     if (!(allowedFields as readonly string[]).includes(field)) {
-      throw new InvalidFilterException(`"${field}" is not a filterable field. Allowed: ${allowedFields.join(', ')}.`);
+      throw new InvalidFilterException(`"${field}" is not a filterable field. Allowed: ${allowedFields.join(', ')}.`, field, allowedFields);
     }
     if (!isPlainFilterValue(value)) {
-      throw new InvalidFilterException(`Filter value for "${field}" must be a string, number, boolean, or array of those — not an object.`);
+      throw new InvalidFilterException(
+        `Filter value for "${field}" must be a string, number, boolean, or array of those — not an object.`,
+        field,
+      );
     }
     sanitized[field as TField] = value;
   }

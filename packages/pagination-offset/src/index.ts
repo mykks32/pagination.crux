@@ -18,5 +18,6 @@ export * from './utils/offset-links.util';
 
 export * from './mongo/mongo-offset-paginator';
 export * from './mongo/mongo-offset-pagination.service';
+export * from './offset-pagination.module';
 
 export * from './to-offset-paginated-response.util';

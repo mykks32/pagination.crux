@@ -58,12 +58,12 @@ export async function paginate<T>(model: Model<T>, options: MongoOffsetPaginatio
 function parseArgs(args: OffsetPaginationArgs): { page: number; limit: number } {
   const page = args.page ?? DEFAULT_PAGE;
   if (!Number.isInteger(page) || page < 1) {
-    throw new InvalidOffsetPaginationArgsException('"page" must be a positive integer.');
+    throw new InvalidOffsetPaginationArgsException('"page" must be a positive integer.', page);
   }
 
   const rawLimit = args.limit ?? DEFAULT_LIMIT;
   if (!Number.isInteger(rawLimit) || rawLimit < 1) {
-    throw new InvalidOffsetPaginationArgsException('"limit" must be a positive integer.');
+    throw new InvalidOffsetPaginationArgsException('"limit" must be a positive integer.', rawLimit);
   }
 
   return { page, limit: Math.min(rawLimit, MAX_LIMIT) };

@@ -17,3 +17,4 @@ export * from './errors/pagination.errors';
 export * from './mongo/mongo-seek-filter.builder';
 export * from './mongo/mongo-cursor-paginator';
 export * from './mongo/mongo-cursor-pagination.service';
+export * from './cursor-pagination.module';

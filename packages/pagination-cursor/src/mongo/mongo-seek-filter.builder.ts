@@ -1,5 +1,6 @@
 import type { FilterQuery } from 'mongoose';
 import type { SortField } from '../interfaces/pagination.interface';
+import { InvalidPaginationArgsException } from '../errors/pagination.errors';
 
 export type SeekDirection = 'after' | 'before';
 
@@ -22,7 +23,10 @@ export type SeekDirection = 'after' | 'before';
  */
 export function buildSeekFilter<T>(sort: SortField[], cursorValues: unknown[], direction: SeekDirection): FilterQuery<T> {
   if (sort.length !== cursorValues.length) {
-    throw new Error(`Sort field count (${sort.length}) does not match cursor value count (${cursorValues.length})`);
+    throw new InvalidPaginationArgsException(
+      `Sort field count (${sort.length}) does not match cursor value count (${cursorValues.length})`,
+      { sortFieldCount: sort.length, cursorValueCount: cursorValues.length },
+    );
   }
 
   const clauses: FilterQuery<T>[] = [];
