@@ -14,3 +14,4 @@ export * from './utils/sort.util';
 export * from './mongo/mongo-seek-filter.builder';
 export * from './mongo/mongo-cursor-paginator';
 export * from './mongo/mongo-cursor-pagination.service';
+export * from './relay-pagination.module';
