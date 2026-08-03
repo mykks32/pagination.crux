@@ -1,6 +1,6 @@
 {
   "name": "@mykks32/pagination-offset",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "description": "Classic page/limit (offset) pagination for NestJS + Mongoose, with a REST data/meta/links envelope",
   "author": "Shree Krishna Yadav",
   "license": "MIT",
